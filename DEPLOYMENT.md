@@ -5,18 +5,16 @@
 **Source repository**
 <https://github.com/Djulz/soot-and-seed>
 
-**Expected public site**
+**Public site**
 <https://djulz.github.io/soot-and-seed/>
 
-The public URL becomes live after the first successful GitHub Pages workflow.
-Use the deployment URL reported by GitHub as the final verification source.
+Verified through the successful GitHub Pages deployment. Use the deployment
+URL reported by GitHub as the final verification source.
 
-> **Private repository requirement:** On the current GitHub account, GitHub
-> Pages cannot be enabled while this repository is private. GitHub's Pages
-> settings require either a public repository or a GitHub Enterprise plan for
-> privately published Pages. Keep the repository private only after Pages has
-> been enabled through an eligible Enterprise plan; otherwise publish from a
-> public repository or choose another hosting provider.
+> **Repository visibility:** This repository is intentionally public because
+> GitHub Pages is not available for a private repository on the current GitHub
+> plan. Keep it public for this deployment route, or move to an eligible
+> Enterprise plan before making it private again.
 
 ## Normal release flow
 
@@ -41,9 +39,8 @@ uses `localStorage`; no backend, database, or build server is required.
 
 ## GitHub Pages setup
 
-After the repository is eligible for GitHub Pages, in **Settings → Pages**,
-set the source to **GitHub Actions**. The committed workflow at
-`.github/workflows/pages.yml` then deploys every push to `main`.
+In **Settings → Pages**, the source is set to **GitHub Actions**. The committed
+workflow at `.github/workflows/pages.yml` deploys every push to `main`.
 
 ## Historical ChatGPT Sites note
 
