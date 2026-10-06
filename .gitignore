@@ -1,0 +1,4 @@
+# Local release artefacts and editor files
+*.tar.gz
+.DS_Store
+_site/
