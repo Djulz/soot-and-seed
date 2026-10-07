@@ -93,7 +93,7 @@
 const T={ground:'ground',rock:'rock',water:'water',void:'void'};
 const O={tree:'tree',wheat:'wheat',ore:'ore',woodcutter:'woodcutter',forge:'forge',well:'well',house:'house',none:null};
 const DIR=[[1,0],[-1,0],[0,1],[0,-1]], AROUND=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-function campaignDef(source){const parsed=parseLevelSource(source);if(!parsed.ok)throw new Error(`Invalid built-in campaign level: ${parsed.errors.join(' | ')}`);return parsed.level}
+function campaignDef(source){const usesWait=/^WAIT\s*$/im.test(source),parsed=parseLevelSource(source.replace(/^WAIT\s*$/gim,'WELL'));if(!parsed.ok)throw new Error(`Invalid built-in campaign level: ${parsed.errors.join(' | ')}`);if(usesWait)parsed.level.tools=parsed.level.tools.map(tool=>tool==='well'?'wait':tool);return parsed.level}
 const levels=[
  campaignDef(`VERSION 2
 NAME First Embers
@@ -178,41 +178,41 @@ W.T....
 W.TT...
 W.T....`),
  campaignDef(`VERSION 2
-NAME The First Well
-MOVES 3
+NAME Let It Burn
+MOVES 1
 GOALS
-WHEAT 4
 WOOD 4
-CHARCOAL 2
+CHARCOAL 1
 ACTIONS
-SICKLE
 WOODCUTTER
-WELL
+WAIT
 MAP
-FTTT.
-.TTT.
-...WW
-...WW
+FTTTT
+....T
+.....
+.....
 .....`),
  campaignDef(`VERSION 2
-NAME Split Grove
+NAME Burn the Bridge
 MOVES 2
 GOALS
-WOOD 5
-CHARCOAL 2
+WHEAT 4
+WOOD 3
+CHARCOAL 4
 ACTIONS
+SICKLE
 WOODCUTTER
-WELL
+WAIT
 MAP
-.....T
-....TT
-....TT
-....T.
-FTTTT.
-......`),
+......
+FTTT..
+..T...
+..TTT.
+....WW
+....WW`),
  campaignDef(`VERSION 2
 NAME Hold the Farmstead
-MOVES 3
+MOVES 2
 GOALS
 WHEAT 4
 WOOD 4
@@ -220,13 +220,13 @@ CHARCOAL 2
 ACTIONS
 SICKLE
 WOODCUTTER
-WELL
+WAIT
 MAP
 FTTTH.
+...T..
+..TT..
 ......
-.WWWW.
-......
-.TTTT.
+WWWW..
 ......`),
  campaignDef(`VERSION 2
 NAME The Waiting Spark
@@ -238,33 +238,40 @@ CHARCOAL 4
 ACTIONS
 SICKLE
 WOODCUTTER
+WAIT
 MAP
-1TTT..
-.T..WW
-....WW
+2TTT..
+.T....
+..WW..
+..WW..
 ..TT..
 ..TT..
 ......`),
  campaignDef(`VERSION 2
 NAME Three Priorities
-MOVES 4
+MOVES 3
 GOALS
 WHEAT 4
-WOOD 8
-CHARCOAL 4
+WOOD 7
+CHARCOAL 6
 ACTIONS
 SICKLE
 WOODCUTTER
-WELL
+WAIT
 MAP
-FTT....
-.TTWWW.
-...WW..
-.TT.2H.
-.T..TT.
-.T..TT.
-.......`)
+FTTTH..
+...T...
+..TT...
+.......
+2TTT...
+.T.TWW.
+.TT.WW.`)
 ];
+levels[5].hint='WAIT advances Fire without spending a move.';
+levels[6].hint='Let Fire reshape the Forest before you harvest it.';
+levels[7].hint='Protect the Farmstead by removing the fuel it needs.';
+levels[8].hint='Numbers show world steps until ignition.';
+levels[9].hint='Two Fire fronts. One careful sequence.';
 const experiments=[
  {name:'Fireline',hint:'Count the advancing fire. Protect the Farmstead before it reaches the line.',moves:2,req:{wheat:4,charcoal:2},tools:['sickle','well'],map:['FTTTH','.....','.WW..','.WW..','.....']},
  {name:'Hold the Farmstead',hint:'The fire moves after every action. Save what you need, then hold the line.',moves:4,req:{wheat:4,wood:6,charcoal:3},tools:['sickle','woodcutter','well'],map:['FTTTH...','.TWW....','.T......','.....WW.','...TTT..','...TTT..']}
@@ -284,8 +291,8 @@ const campaignChapters=[
   {id:'lowlands-05-the-divide',number:5,title:'The Divide',tag:'',level:levels[4]}
  ]},
  {id:'pinebreak',number:2,title:'Pinebreak',subtitle:'Deeper forests and harder choices.',mark:'▲',entries:[
-  {id:'pinebreak-06-the-first-well',number:6,title:'The First Well',tag:'',level:levels[5]},
-  {id:'pinebreak-07-split-grove',number:7,title:'Split Grove',tag:'',level:levels[6]},
+  {id:'pinebreak-06-let-it-burn',number:6,title:'Let It Burn',tag:'',level:levels[5]},
+  {id:'pinebreak-07-burn-the-bridge',number:7,title:'Burn the Bridge',tag:'',level:levels[6]},
   {id:'pinebreak-08-hold-the-farmstead',number:8,title:'Hold the Farmstead',tag:'',level:levels[7]},
   {id:'pinebreak-09-the-waiting-spark',number:9,title:'The Waiting Spark',tag:'',level:levels[8]},
   {id:'pinebreak-10-three-priorities',number:10,title:'Three Priorities',tag:'',level:levels[9]}
@@ -318,13 +325,13 @@ const pos=([r,c])=>`r${r+1},c${c+1}`;
 const posList=cells=>cells?.map(pos).join(', ')||'';
 const cloneState=()=>JSON.parse(JSON.stringify(state));
 const resourceDelta=(before,after)=>Object.fromEntries(Object.keys(after).map(k=>[k,(after[k]||0)-(before[k]||0)]).filter(([,v])=>v));
-function beginTurn(tool,r,c){undoStack.push({state:cloneState(),historyLength:turnHistory.length});currentTurn={number:state.actions+1,tool,target:[r,c],movesBefore:state.moves,resourcesBefore:{...state.res},events:[],harvested:[],wet:[],forge:null,fire:[],scheduled:[],destroyedCenter:state.cells[r][c].object||null}}
+function beginTurn(tool,r=null,c=null){const scheduledBefore=[];state.cells.forEach((row,rr)=>row.forEach((cell,cc)=>{if(cell.ignition&&!cell.ignition.fired)scheduledBefore.push({at:[rr,cc],remaining:Math.max(0,cell.ignition.after-state.actions)})}));undoStack.push({state:cloneState(),historyLength:turnHistory.length});currentTurn={number:state.actions+1,tool,target:r===null?null:[r,c],movesBefore:state.moves,resourcesBefore:{...state.res},events:[],harvested:[],wet:[],forge:null,fire:[],scheduled:[],scheduledBefore,destroyedCenter:r===null?null:state.cells[r][c].object||null}}
 function endTurn(){if(!currentTurn)return;currentTurn.movesAfter=state.moves;currentTurn.resourcesAfter={...state.res};currentTurn.delta=resourceDelta(currentTurn.resourcesBefore,currentTurn.resourcesAfter);currentTurn.result=state.houseLost?'loss':won()?'win':'';turnHistory.push(currentTurn);currentTurn=null;renderHistory();updateUndoControl()}
 function undoTurn(){const modalOpen=!document.querySelector('#modal').hidden||!document.querySelector('#resultModal').hidden;if((locked&&!modalOpen)||!undoStack.length)return;const previous=undoStack.pop();state=previous.state;turnHistory=turnHistory.slice(0,previous.historyLength);currentTurn=null;selected=null;locked=false;hideModal();hideResult();render();renderHistory();updateUndoControl()}
 function updateUndoControl(){const modalOpen=!document.querySelector('#modal').hidden,button=document.querySelector('#undo');if(button)button.disabled=(locked&&!modalOpen)||!undoStack.length;const modalUndo=document.querySelector('#modalUndo');if(modalUndo){modalUndo.hidden=!undoStack.length;modalUndo.onclick=undoTurn}}
-function historyText(turn){const action=`${turn.tool.toUpperCase()} @ ${pos(turn.target)}`,bits=[];if(turn.destroyedCenter&&['forge','well'].includes(turn.tool))bits.push(`center ${turn.destroyedCenter} removed`);if(turn.harvested.length)bits.push(`${turn.harvested.length} ${turn.tool==='sickle'?'Wheat':'Trees'} harvested: ${posList(turn.harvested)}`);if(turn.forge)bits.push(`Forge fuel: ${posList(turn.forge.fuel)} · Ore: ${posList(turn.forge.ore)} · Iron +${turn.forge.count}`);if(turn.wet.length)bits.push(`Wet: ${posList(turn.wet)}`);for(const fire of turn.fire){const normal=fire.normal.length?`normal: ${posList(fire.normal)}`:'';const wind=fire.wind.length?`wind ${WIND_ARROW[fire.windDir]||''}: ${posList(fire.wind)}`:'';const life=`Active→Dying ${fire.activeToDying.length} · Dying→Burnt ${fire.dyingToBurnt.length}`;const charcoal=fire.charcoal?`charcoal +${fire.charcoal}`:'';bits.push(['Fire',normal,wind,life,charcoal].filter(Boolean).join(' · '))}if(turn.scheduled.length)bits.push(`scheduled Fire: ${posList(turn.scheduled)}`);const gains=Object.entries(turn.delta||{}).map(([k,v])=>`${k}+${v}`).join(' · ');if(gains)bits.push(gains);bits.push(`moves ${turn.movesBefore} → ${turn.movesAfter}`);return{action,bits}}
-function renderHistory(){const host=document.querySelector('#historyLog');if(!host)return;if(!turnHistory.length){host.innerHTML='<p>No completed turns yet.</p>';return}host.innerHTML=turnHistory.map(turn=>{const x=historyText(turn);return`<article class="history-entry"><strong>TURN ${turn.number} · ${x.action}</strong>${x.bits.length?`<span class="history-detail">${x.bits.join('<br>')}</span>`:''}${turn.result?`<span class="history-detail"><strong>RESULT — ${turn.result.toUpperCase()}</strong></span>`:''}</article>`}).join('')}
-function copyRun(){const title=activeLevel.name.replace(/^\s*\d+\s*·\s*/,''),status=state.houseLost?'LOSS':won()?'WIN':'IN PROGRESS',steps=turnHistory.map(turn=>{const forge=turn.forge?` → ${turn.forge.count} Iron`:'';return`${turn.number}. ${turn.tool.toUpperCase()} ${pos(turn.target)}${forge}`}).join('\n')||'No actions';const totals=Object.entries(state.res).map(([k,v])=>`${k[0].toUpperCase()}${v}`).join(' / ');const report=`${title}\n${status} — ${activeLevel.moves-state.moves} / ${activeLevel.moves} moves\n${windDirection()?`Wind ${windDirection().toUpperCase()}\n`:''}\n${steps}\n\nFinal:\n${totals}${state.housesTotal?`\nFarmstead ${state.houseLost?'Lost':'Safe'}`:''}`;navigator.clipboard?.writeText(report);const feedback=document.querySelector('#customFeedback');if(feedback)feedback.textContent='Run copied.'}
+function historyText(turn){const action=turn.tool==='wait'?'WAIT':`${turn.tool.toUpperCase()} @ ${pos(turn.target)}`,bits=[];if(turn.destroyedCenter&&['forge','well'].includes(turn.tool))bits.push(`center ${turn.destroyedCenter} removed`);if(turn.harvested.length)bits.push(`${turn.harvested.length} ${turn.tool==='sickle'?'Wheat':'Trees'} harvested: ${posList(turn.harvested)}`);if(turn.forge)bits.push(`Forge fuel: ${posList(turn.forge.fuel)} · Ore: ${posList(turn.forge.ore)} · Iron +${turn.forge.count}`);if(turn.wet.length)bits.push(`Wet: ${posList(turn.wet)}`);for(const fire of turn.fire){const normal=fire.normal.length?`normal: ${posList(fire.normal)}`:'';const wind=fire.wind.length?`wind ${WIND_ARROW[fire.windDir]||''}: ${posList(fire.wind)}`:'';const life=`Active→Dying ${fire.activeToDying.length} · Dying→Burnt ${fire.dyingToBurnt.length}`;const charcoal=fire.charcoal?`charcoal +${fire.charcoal}`:'';bits.push(['Fire',normal,wind,life,charcoal].filter(Boolean).join(' · '))}if(turn.scheduledBefore?.length)bits.push(`scheduled: ${turn.scheduledBefore.map(source=>`${pos(source.at)} ${source.remaining} → ${Math.max(0,source.remaining-1)}`).join(' · ')}`);if(turn.scheduled.length)bits.push(`scheduled Fire: ${posList(turn.scheduled)}`);const gains=Object.entries(turn.delta||{}).map(([k,v])=>`${k}+${v}`).join(' · ');if(gains)bits.push(gains);bits.push(`moves ${turn.movesBefore} → ${turn.movesAfter}`);return{action,bits}}
+function renderHistory(){const host=document.querySelector('#historyLog');if(!host)return;if(!turnHistory.length){host.innerHTML='<p>No completed turns yet.</p>';return}host.innerHTML=turnHistory.map(turn=>{const x=historyText(turn);return`<article class="history-entry"><strong>STEP ${turn.number} · ${x.action}</strong>${x.bits.length?`<span class="history-detail">${x.bits.join('<br>')}</span>`:''}${turn.result?`<span class="history-detail"><strong>RESULT — ${turn.result.toUpperCase()}</strong></span>`:''}</article>`}).join('')}
+function copyRun(){const title=activeLevel.name.replace(/^\s*\d+\s*·\s*/,''),status=state.houseLost?'LOSS':won()?'WIN':'IN PROGRESS',steps=turnHistory.map(turn=>{const forge=turn.forge?` → ${turn.forge.count} Iron`:'';return`${turn.number}. ${turn.tool==='wait'?'WAIT':`${turn.tool.toUpperCase()} ${pos(turn.target)}`}${forge}`}).join('\n')||'No actions';const totals=Object.entries(state.res).map(([k,v])=>`${k[0].toUpperCase()}${v}`).join(' / ');const report=`${title}\n${status} — ${activeLevel.moves-state.moves} / ${activeLevel.moves} moves\n${windDirection()?`Wind ${windDirection().toUpperCase()}\n`:''}\n${steps}\n\nFinal:\n${totals}${state.housesTotal?`\nFarmstead ${state.houseLost?'Lost':'Safe'}`:''}`;navigator.clipboard?.writeText(report);const feedback=document.querySelector('#customFeedback');if(feedback)feedback.textContent='Run copied.'}
 function inBoard(r,c){return !!state.cells[r]?.[c]}
 function queueBoardGeometry(){cancelAnimationFrame(boardGeometryFrame);boardGeometryFrame=requestAnimationFrame(()=>{if(!state?.cells?.length)return;const cols=state.cells[0].length,rows=state.cells.length,style=getComputedStyle(boardEl),gap=parseFloat(style.columnGap)||0,hPad=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0)+(parseFloat(style.borderLeftWidth)||0)+(parseFloat(style.borderRightWidth)||0),vPad=(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0)+(parseFloat(style.borderTopWidth)||0)+(parseFloat(style.borderBottomWidth)||0),tile=(boardEl.getBoundingClientRect().width-hPad-gap*(cols-1))/cols;boardEl.style.height=`${Math.max(0,tile*rows+gap*(rows-1)+vPad)}px`})}
 function neighbors(r,c,diag=false){let a=diag?AROUND:DIR;return a.map(([dr,dc])=>[r+dr,c+dc]).filter(([rr,cc])=>inBoard(rr,cc))}
@@ -334,7 +341,7 @@ function calculateForgeResult(r,c){const fuel=neighbors(r,c,true).filter(([rr,cc
 function valid(r,c,tool){const cell=state.cells[r][c];if(tool==='sickle')return cell.object===O.wheat;if(tool==='woodcutter')return cell.object===O.tree;if(['forge','well'].includes(tool)){if(cell.ignition||['active-fire','dying-fire'].includes(cell.state)||cell.terrain!==T.ground||[O.woodcutter,O.forge,O.well,O.house].includes(cell.object))return false;if(tool==='forge')return calculateForgeResult(r,c).valid;return true}return false}
 function burnRegion(r,c){const out=[],seen=new Set(),q=[[r,c]];while(q.length){const [rr,cc]=q.shift(),key=rr+','+cc,x=state.cells[rr]?.[cc];if(seen.has(key)||!x||x.wet||![O.tree,O.wheat].includes(x.object))continue;seen.add(key);out.push([rr,cc]);neighbors(rr,cc).forEach(n=>q.push(n))}return out}
 function previewSet(r,c){if(!selected||!valid(r,c,selected))return[];if(selected==='sickle')return region(r,c,O.wheat);if(selected==='woodcutter')return region(r,c,O.tree);if(['forge','well'].includes(selected))return neighbors(r,c,true);return[]}
-function token(kind,extra=''){const svg=body=>`<svg class="token ${kind} ${extra}" viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;if(kind==='tree')return svg('<path d="M22 31h5v11h-5z" fill="#815334"/><path d="M24.5 4 10 27h8L8 38h33L31 27h8z" fill="#355d42"/><path d="m24.5 7-10 18h8l-8 11h20l-8-11h8z" fill="#4e754d"/><path d="m24.5 7-6 11h12z" fill="#789268"/>');if(kind==='wheat')return svg('<path d="M23 11v29M27 11v29M19 15v25" stroke="#a86f28" stroke-width="2" stroke-linecap="round"/><g fill="#d5a440"><ellipse cx="16" cy="15" rx="3" ry="5" transform="rotate(-32 16 15)"/><ellipse cx="30" cy="14" rx="3" ry="5" transform="rotate(32 30 14)"/><ellipse cx="14" cy="23" rx="3" ry="5" transform="rotate(-35 14 23)"/><ellipse cx="33" cy="22" rx="3" ry="5" transform="rotate(35 33 22)"/><ellipse cx="17" cy="31" rx="3" ry="5" transform="rotate(-35 17 31)"/><ellipse cx="30" cy="30" rx="3" ry="5" transform="rotate(35 30 30)"/></g><path d="M16 15c2-2 4-2 5-1M30 14c-2-2-4-2-5-1" stroke="#f1cf6a" stroke-width="1.2" fill="none"/>');if(kind==='ore'||kind==='iron')return svg('<path d="m8 31 9-18 13 2 10 13-10 11-16-2z" fill="#69736f"/><path d="m17 13 13 2-5 10-13 6z" fill="#a8b3af"/><path d="m12 31 13-6 5 14-16-2z" fill="#818d89"/><path d="m25 25 15 3-10 11z" fill="#535c5a"/>');if(kind==='charcoal')return svg('<path d="m8 29 8-12 11 3 3 13-14 7z" fill="#353834"/><path d="m25 14 10 5 4 13-11 3-7-10z" fill="#222522"/><path d="m14 22 7-4 5 6-7 6z" fill="#54544a"/><path d="m29 19 5 2-3 6z" fill="#656256"/>');if(kind==='wood')return svg('<rect x="8" y="18" width="31" height="14" rx="6" fill="#9b6337" transform="rotate(-10 24 25)"/><path d="M11 21c5 1 8 5 7 10M35 18c-4 2-6 7-4 12" stroke="#d19a5b" stroke-width="2" fill="none"/><circle cx="37" cy="23" r="5" fill="#d9a56d"/><circle cx="37" cy="23" r="2.5" fill="none" stroke="#9b6337"/>');if(kind==='well')return svg('<ellipse cx="24" cy="29" rx="16" ry="10" fill="#707775"/><ellipse cx="24" cy="25" rx="14" ry="8" fill="#b4b6ab"/><ellipse cx="24" cy="24" rx="10" ry="5" fill="#303936"/><path d="M11 28h26v7H11z" fill="#92978f"/><path d="M13 30h22M17 27v8M29 27v8" stroke="#d7d5ca" stroke-width="1.4"/>');if(kind==='forge')return svg('<path d="M9 30h27l-4 8H15z" fill="#65706b"/><path d="M14 15h18l5 15H10z" fill="#88918b"/><path d="M18 11h10v6H18z" fill="#535d59"/><path d="M18 24h13l-4 5h-9z" fill="#d0833d"/>');if(kind==='house')return svg('<path d="M9 23 24 10l15 13v16H10z" fill="#c9b99a"/><path d="m7 24 17-15 17 15-3 3-14-12-14 12z" fill="#9e623d"/><path d="M20 28h8v11h-8z" fill="#71543d"/><path d="M13 29h5v6h-5zm17 0h5v6h-5z" fill="#f5e8c9"/><path d="M33 13h4v12h-4z" fill="#7b6754"/>');if(kind==='woodcutter')return svg('<path d="m15 37 18-25" stroke="#835236" stroke-width="4" stroke-linecap="round"/><path d="M20 11c9-5 15 1 14 9l-11 1z" fill="#6c7771"/><path d="m22 12 10 8" stroke="#bcc1b8" stroke-width="1.5"/>');if(kind==='sickle')return svg('<path d="M11 10c14 1 21 10 21 24" stroke="#8a5535" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M17 9c13 3 18 12 15 21-4-7-10-10-18-10z" fill="#a6b5a7"/><path d="M18 10c10 4 14 10 14 20" stroke="#e0e6dd" stroke-width="1.4" fill="none"/>');if(kind==='fire')return svg('<path d="M24 42c-10 0-15-7-13-16 2-8 9-10 10-20 7 5 4 12 8 15 3-3 4-7 3-11 8 7 9 14 6 22-2 6-7 10-14 10z" fill="#c85932"/><path d="M24 37c-5 0-8-4-6-9 2-4 5-5 6-10 4 4 5 7 4 11 3-1 4-4 4-6 3 7-1 14-8 14z" fill="#f0a34c"/>');return svg('<circle cx="24" cy="24" r="12" fill="#88918b"/>')}
+function token(kind,extra=''){const svg=body=>`<svg class="token ${kind} ${extra}" viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;if(kind==='tree')return svg('<path d="M22 31h5v11h-5z" fill="#815334"/><path d="M24.5 4 10 27h8L8 38h33L31 27h8z" fill="#355d42"/><path d="m24.5 7-10 18h8l-8 11h20l-8-11h8z" fill="#4e754d"/><path d="m24.5 7-6 11h12z" fill="#789268"/>');if(kind==='wheat')return svg('<path d="M23 11v29M27 11v29M19 15v25" stroke="#a86f28" stroke-width="2" stroke-linecap="round"/><g fill="#d5a440"><ellipse cx="16" cy="15" rx="3" ry="5" transform="rotate(-32 16 15)"/><ellipse cx="30" cy="14" rx="3" ry="5" transform="rotate(32 30 14)"/><ellipse cx="14" cy="23" rx="3" ry="5" transform="rotate(-35 14 23)"/><ellipse cx="33" cy="22" rx="3" ry="5" transform="rotate(35 33 22)"/><ellipse cx="17" cy="31" rx="3" ry="5" transform="rotate(-35 17 31)"/><ellipse cx="30" cy="30" rx="3" ry="5" transform="rotate(35 30 30)"/></g><path d="M16 15c2-2 4-2 5-1M30 14c-2-2-4-2-5-1" stroke="#f1cf6a" stroke-width="1.2" fill="none"/>');if(kind==='ore'||kind==='iron')return svg('<path d="m8 31 9-18 13 2 10 13-10 11-16-2z" fill="#69736f"/><path d="m17 13 13 2-5 10-13 6z" fill="#a8b3af"/><path d="m12 31 13-6 5 14-16-2z" fill="#818d89"/><path d="m25 25 15 3-10 11z" fill="#535c5a"/>');if(kind==='charcoal')return svg('<path d="m8 29 8-12 11 3 3 13-14 7z" fill="#353834"/><path d="m25 14 10 5 4 13-11 3-7-10z" fill="#222522"/><path d="m14 22 7-4 5 6-7 6z" fill="#54544a"/><path d="m29 19 5 2-3 6z" fill="#656256"/>');if(kind==='wood')return svg('<rect x="8" y="18" width="31" height="14" rx="6" fill="#9b6337" transform="rotate(-10 24 25)"/><path d="M11 21c5 1 8 5 7 10M35 18c-4 2-6 7-4 12" stroke="#d19a5b" stroke-width="2" fill="none"/><circle cx="37" cy="23" r="5" fill="#d9a56d"/><circle cx="37" cy="23" r="2.5" fill="none" stroke="#9b6337"/>');if(kind==='well')return svg('<ellipse cx="24" cy="29" rx="16" ry="10" fill="#707775"/><ellipse cx="24" cy="25" rx="14" ry="8" fill="#b4b6ab"/><ellipse cx="24" cy="24" rx="10" ry="5" fill="#303936"/><path d="M11 28h26v7H11z" fill="#92978f"/><path d="M13 30h22M17 27v8M29 27v8" stroke="#d7d5ca" stroke-width="1.4"/>');if(kind==='forge')return svg('<path d="M9 30h27l-4 8H15z" fill="#65706b"/><path d="M14 15h18l5 15H10z" fill="#88918b"/><path d="M18 11h10v6H18z" fill="#535d59"/><path d="M18 24h13l-4 5h-9z" fill="#d0833d"/>');if(kind==='house')return svg('<path d="M9 23 24 10l15 13v16H10z" fill="#c9b99a"/><path d="m7 24 17-15 17 15-3 3-14-12-14 12z" fill="#9e623d"/><path d="M20 28h8v11h-8z" fill="#71543d"/><path d="M13 29h5v6h-5zm17 0h5v6h-5z" fill="#f5e8c9"/><path d="M33 13h4v12h-4z" fill="#7b6754"/>');if(kind==='woodcutter')return svg('<path d="m15 37 18-25" stroke="#835236" stroke-width="4" stroke-linecap="round"/><path d="M20 11c9-5 15 1 14 9l-11 1z" fill="#6c7771"/><path d="m22 12 10 8" stroke="#bcc1b8" stroke-width="1.5"/>');if(kind==='sickle')return svg('<path d="M11 10c14 1 21 10 21 24" stroke="#8a5535" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M17 9c13 3 18 12 15 21-4-7-10-10-18-10z" fill="#a6b5a7"/><path d="M18 10c10 4 14 10 14 20" stroke="#e0e6dd" stroke-width="1.4" fill="none"/>');if(kind==='wait')return svg('<path d="M14 7h20M14 41h20M17 8c1 8 5 11 7 16-2 5-6 8-7 16M31 8c-1 8-5 11-7 16 2 5 6 8 7 16" fill="none" stroke="#75654f" stroke-width="3" stroke-linecap="round"/><path d="m19 14 10 10-10 10z" fill="#c58a42"/>');if(kind==='fire')return svg('<path d="M24 42c-10 0-15-7-13-16 2-8 9-10 10-20 7 5 4 12 8 15 3-3 4-7 3-11 8 7 9 14 6 22-2 6-7 10-14 10z" fill="#c85932"/><path d="M24 37c-5 0-8-4-6-9 2-4 5-5 6-10 4 4 5 7 4 11 3-1 4-4 4-6 3 7-1 14-8 14z" fill="#f0a34c"/>');return svg('<circle cx="24" cy="24" r="12" fill="#88918b"/>')}
 function glyph(cell){let out=cell.object===O.tree?`<span class="obj tree">${token('tree')}</span>`:cell.object===O.wheat?`<span class="obj wheat">${token('wheat')}</span>`:cell.object===O.ore?`<span class="obj ore">${token('ore')}</span>`:cell.object===O.house?`<span class="obj house">${token('house')}</span>`:cell.object===O.woodcutter?`<span class="obj build">${token('woodcutter')}</span>`:cell.object===O.forge?`<span class="obj build">${token('forge')}</span>`:cell.object===O.well?`<span class="obj build">${token('well')}</span>`:'';if(cell.state==='active-fire'){const wind=windDirection();out+=`<span class="active-flame${wind?' wind-'+wind:''}">${token('fire')}${wind?'<i class="fire-threat"></i>':''}</span>`}if(cell.state==='dying-fire')out+=`<span class="dying-flame">${token('fire')}</span>`;if(cell.ignition){const n=Math.max(0,cell.ignition.after-state.actions),spent=cell.ignition.fired;out+=`<span class="ignition ${spent?'spent':'count-'+Math.min(5,Math.max(1,n))}"><span class="ember-bed"></span><span class="countdown">${spent?'':n}</span></span>`}return out}
 function resultGlyph(k){return({wood:'🪵',wheat:'✦',charcoal:'⬛',iron:'◆'})[k]}
 function resultToken(k){return token(k)}
@@ -423,7 +430,27 @@ document.querySelector('#continueCampaign').onclick=()=>{const entry=resumeCampa
 document.querySelector('#openPuzzles').onclick=renderPuzzleSelect;
 document.querySelector('#selectBack').onclick=showMenu;
 document.querySelector('#returnToSelect').onclick=renderPuzzleSelect;
+
+// WAIT is a full world step with no direct board mutation and no move cost.
+// Keep it on the same snapshot/history path as paid actions for deterministic Undo.
+function canWait(){return activeFireCells().length>0||dyingFireCells().length>0||state.cells.flat().some(cell=>cell.ignition&&!cell.ignition.fired)}
+async function runWait(){if(locked||!canWait())return;selected=null;beginTurn('wait');locked=true;render();state.actions++;render();await triggerAutoFire();await finishAction();endTurn()}
+
+// WAIT is stored as an action in the authoring format while preserving the
+// existing parser's level shape and all legacy custom-level data.
+const coreParseLevelSource=parseLevelSource;
+parseLevelSource=function(source){const usesWait=/^WAIT\s*$/im.test(source),parsed=coreParseLevelSource(source.replace(/^WAIT\s*$/gim,'WELL'));if(parsed.ok&&usesWait){const lines=source.split(/\r?\n/).map(line=>line.trim().toUpperCase()),start=lines.indexOf('ACTIONS'),end=lines.indexOf('MAP'),tools=lines.slice(start+1,end).filter(action=>['SICKLE','WOODCUTTER','FORGE','WELL','WAIT'].includes(action)).map(action=>action.toLowerCase());parsed.level.tools=[...new Set(tools)]}return parsed}
+
+const baseToolLabel=label,baseToolDesc=desc;
+label=function(tool){return tool==='wait'?`<span class="tool-token">${token('wait')}</span>Wait`:baseToolLabel(tool)};
+desc=function(tool){return tool==='wait'?'Advance the world · 0 moves':baseToolDesc(tool)};
+
+const renderWithCampaign=render;
+render=function(){renderWithCampaign();const waitButton=toolsEl.querySelector('[data-tool="wait"]');if(waitButton){waitButton.disabled=locked||!canWait();waitButton.classList.toggle('selected',false);waitButton.onclick=runWait}const help=document.querySelector('.format-help p:last-child');if(help)help.innerHTML='GOALS: WOOD, CHARCOAL, WHEAT, IRON<br>ACTIONS: SICKLE, WOODCUTTER, FORGE, WELL, WAIT'};
+const renderWithWaitReadout=render;
+render=function(){renderWithWaitReadout();const readout=document.querySelector('#readout');if(readout)readout.textContent=readout.textContent.replace(`${state.actions} actions`,`${state.actions} world steps`)};
 window.addEventListener('resize',queueBoardGeometry);
 showMenu();
 </script>
+<script src="./wait-campaign.js"></script>
 </body></html>
