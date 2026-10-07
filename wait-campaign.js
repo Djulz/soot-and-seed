@@ -39,6 +39,25 @@
   campaignChapters.push(ironwoodChapter);
   ironwoodChapter.entries.forEach(entry => campaignEntries.push({...entry,chapterId:ironwoodChapter.id}));
 
+
+  const windfall = [
+    { id:'windfall-16-across-the-gap', title:'Across the Gap', hint:'Wind carries Fire one extra tile downwind.', moves:1, wind:'right', req:{wood:3,charcoal:1}, tools:['woodcutter','wait'], map:['F.T...','......','.TTT..','......','......'] },
+    { id:'windfall-17-tailwind', title:'Tailwind', hint:'', moves:2, wind:'right', req:{wheat:4,wood:3,charcoal:2}, tools:['sickle','woodcutter','wait'], map:['FTTTTT','......','WW....','WW....','......','......'] },
+    { id:'windfall-18-break-the-line', title:'Break the Line', hint:'', moves:2, wind:'down', req:{wheat:4,wood:2,charcoal:2}, tools:['sickle','woodcutter','wait'], map:['....TF','....T.','.WW..T','.WW..T','.....H','......'] },
+    { id:'windfall-19-fanned-spark', title:'Fanned Spark', hint:'', moves:3, wind:'left', req:{iron:3,wood:4,charcoal:2,wheat:4}, tools:['sickle','woodcutter','forge','wait'], map:['..WWWW.','TTTTTT2','.......','.......','..OO...','..OOT..','..TTT..'], fires:[{r:1,c:6,after:2}] },
+    { id:'windfall-20-the-long-gale', title:'The Long Gale', hint:'', moves:4, wind:'up', req:{iron:3,wood:9,charcoal:4,wheat:4}, tools:['sickle','woodcutter','forge','wait'], map:['......TW','H.....TW','.O...TTW','TOO..TTW','...T.T..','TT.T.T..','...T.T..','F..T.3..'], fires:[{r:7,c:5,after:3}] }
+  ];
+  const windfallChapter = {
+    id:'windfall', number:4, title:'Windfall', subtitle:'The gale changes every fireline.', mark:'↝',
+    entries: windfall.map((definition,index) => {
+      const level = Object.assign({name:definition.title,formatVersion:2}, definition, {map:definition.map.map(row => row.replace(/[1-9]/g,'.'))});
+      levels.push(level);
+      return {id:definition.id,number:16+index,title:definition.title,tag:'',level};
+    })
+  };
+  campaignChapters.push(windfallChapter);
+  windfallChapter.entries.forEach(entry => campaignEntries.push({...entry,chapterId:windfallChapter.id}));
+
   const baseShowMenu = showMenu;
   showMenu = function() {
     baseShowMenu();
