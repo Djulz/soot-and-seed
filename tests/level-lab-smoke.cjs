@@ -2,6 +2,7 @@ const assert=require('node:assert/strict');
 const sim=require('../game-simulation.js');
 globalThis.SootSeedSimulation=sim;
 require('../level-lab/types.js');require('../level-lab/rng.js');require('../level-lab/candidates.js');require('../level-lab/validation.js');require('../level-lab/mutations.js');require('../level-lab/solver.js');require('../level-lab/evaluation.js');
+require('../level-lab/agents.js');
 const level={name:'Smoke',moves:2,req:{wood:0,charcoal:1},tools:['wait','woodcutter'],map:['FT.','...']};
 const original=JSON.parse(JSON.stringify(level));
 const candidate=SootSeedLevelLabCandidates.createCandidate('test',level,{id:'seed'});
