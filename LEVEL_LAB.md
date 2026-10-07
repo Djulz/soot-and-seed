@@ -10,7 +10,7 @@ The public API includes `createInitialState`, `getLegalActions`, `applyAction`, 
 
 ## Candidate lifecycle
 
-`seed level → clone candidate → optional legal mutation → structural/static validation → smoke simulation → future oracle/agents/evaluation`.
+`seed level → clone candidate → optional legal mutation → structural/static validation → Oracle → human-agent ensemble → metrics / comparison`.
 
 Candidates contain their seed ID, a stable candidate ID, generation, optional parent ID, cloned level definition, readable mutation history and evaluation placeholders. The two current mutations are deliberate pipeline checks only; they never mutate canonical campaign definitions.
 
@@ -22,13 +22,16 @@ Candidates contain their seed ID, a stable candidate ID, generation, optional pa
 - Two safe test mutations
 - Structural and static-sanity validation
 - Simulation smoke inspection
+- Oracle Solver v1 with replay-verified solutions and deterministic duplicate-state detection
+- Eight bounded heuristic agents: Balanced, Greedy Harvester, Max Yield, Forge First, Requirement Chaser, Fire Fearful, Wait Friendly and Action Conservator
+- Seeded ensemble runs, attempt traces, first-action distributions and post-run Oracle comparison
 - Candidate playthrough through the normal gameplay renderer
-- Interfaces for oracle solver, heuristic agents, metrics and generation
+- Extensible interfaces for metrics and generation
 
 ## Intentionally deferred
 
-- Production oracle solver
-- Tuned human-like solver ensemble
+- Production-strength oracle optimization
+- Tuned/calibrated human-like solver ensemble
 - Large-scale mutation generation
 - Fitness/difficulty model
 - Evolutionary generations
