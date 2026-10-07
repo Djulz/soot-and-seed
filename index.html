@@ -452,6 +452,8 @@ const renderWithWaitReadout=render;
 render=function(){renderWithWaitReadout();const readout=document.querySelector('#readout');if(readout)readout.textContent=readout.textContent.replace(`${state.actions} actions`,`${state.actions} world steps`)};
 window.addEventListener('resize',queueBoardGeometry);
 showMenu();
+// Narrow bridge for developer tooling. Campaign data stays owned by gameplay.
+window.SootSeedGame={campaignEntries,loadCustomLevel,showScreen,showMenu};
 </script>
 <script src="./wait-campaign.js"></script>
 <script src="./level-lab/types.js"></script>
