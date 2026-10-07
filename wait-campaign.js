@@ -19,6 +19,35 @@
     Object.assign(entry, {id:definition.id,title:definition.title,level});
   });
 
+  // Chapter 3 intentionally lives in the campaign extension so Chapters 1–2
+  // and their authored level definitions remain untouched.
+  const ironwood = [
+    { id:'ironwood-11-first-forge', title:'First Forge', hint:'Forge uses 1 nearby Tree for each Ore it processes.', moves:2, req:{iron:3,wood:3,charcoal:2}, tools:['forge','woodcutter','wait'], map:['TOO..','T.O..','T....','FT...','T.TTT'] },
+    { id:'ironwood-12-leave-enough', title:'Leave Enough', hint:'', moves:2, req:{iron:3,wood:5,charcoal:2}, tools:['forge','woodcutter','wait'], map:['.TTTTT','.T.OO.','.T.OO.','.T....','FT....','.T....'] },
+    { id:'ironwood-13-three-ways', title:'Three Ways', hint:'', moves:2, req:{iron:3,wood:5,charcoal:4}, tools:['forge','woodcutter','wait'], map:['.......','...OO..','...OO..','FTTTT..','TTTTT..','.TTT...'] },
+    { id:'ironwood-14-before-the-spark', title:'Before the Spark', hint:'', moves:3, req:{iron:3,wood:5,charcoal:4,wheat:4}, tools:['sickle','woodcutter','forge','wait'], map:['.......','....OO.','T...OO.','TTTTT..','2TTTT..','.TT..WW','.....WW'], fires:[{r:4,c:0,after:2}] },
+    { id:'ironwood-15-the-iron-line', title:'The Iron Line', hint:'', moves:4, req:{iron:3,wood:8,charcoal:6,wheat:4}, tools:['sickle','woodcutter','forge','wait'], map:['FTTTTTTH','.....OO.','.....OO.','.TTTTT..','.TT1T...','.TT.....','..T...WW','......WW'], fires:[{r:4,c:3,after:1}] }
+  ];
+  const ironwoodChapter = {
+    id:'ironwood', number:3, title:'Ironwood', subtitle:'Ore veins and harder bargains.', mark:'◆',
+    entries: ironwood.map((definition,index) => {
+      const level = Object.assign({name:definition.title,formatVersion:2}, definition);
+      levels.push(level);
+      return {id:definition.id,number:11+index,title:definition.title,tag:'',level};
+    })
+  };
+  campaignChapters.push(ironwoodChapter);
+  ironwoodChapter.entries.forEach(entry => campaignEntries.push({...entry,chapterId:ironwoodChapter.id}));
+
+  const baseShowMenu = showMenu;
+  showMenu = function() {
+    baseShowMenu();
+    const resume = resumeCampaignEntry();
+    if (!resume) return;
+    const chapter = campaignChapters.find(item => item.id === resume.chapterId);
+    document.querySelector('#continueSub').textContent = `Chapter ${chapter.number} · ${chapter.title} · ${resume.title}`;
+  };
+
   const legacyIds = {
     'pinebreak-06-the-first-well':'pinebreak-06-let-it-burn',
     'pinebreak-07-split-grove':'pinebreak-07-burn-the-bridge'
