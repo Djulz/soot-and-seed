@@ -17,6 +17,8 @@ assert.equal(waited.cells[0][0].state,'dying-fire','WAIT advances active Fire');
 const cloneA=SootSeedLevelLabCandidates.cloneCandidate(candidate,{id:'copy-a'}),cloneB=SootSeedLevelLabCandidates.cloneCandidate(candidate,{id:'copy-b'});
 assert.deepEqual(cloneA.level,cloneB.level,'candidate cloning is deterministic');
 assert.equal(SootSeedLevelLabValidation.validate({...level,fires:[{r:99,c:0,after:1}]}).ok,false,'invalid fire coordinates are rejected');
+assert.equal(SootSeedLevelLabValidation.validate({name:'Digit fire',moves:1,req:{charcoal:0},tools:['wait'],map:['1']}).ok,true,'scheduled-fire map markers are structurally valid');
+assert.equal(sim.createInitialState({moves:1,req:{},tools:['wait'],map:['1']}).cells[0][0].terrain,'ground','scheduled-fire map markers retain ground terrain');
 const a=SootSeedLevelLabRng.createSeededRng('repeat'),b=SootSeedLevelLabRng.createSeededRng('repeat');
 assert.deepEqual([a.next(),a.next(),a.next()],[b.next(),b.next(),b.next()],'seeded RNG repeats');
 const waitActions=SootSeedLevelLabSolver.canonicalActions(candidate.level,initial);
