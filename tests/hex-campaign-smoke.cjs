@@ -18,6 +18,13 @@ for(const level of campaign.levels.slice(1))assert.equal(Object.keys(level.cells
 assert.deepEqual(campaign.levels.map(level=>solve(level).length),[1,1,1,5,5],'every Lowlands level has one or more production-engine winning paths');
 assert.equal(solve(campaign.levels[3]).every(path=>path.some(action=>action.tool==='wait')),true,'Waiting Spark requires WAIT in every winning path');
 assert.deepEqual(campaign.levels.map(woodCounts),[{raw:18,distinct:6},{raw:24,distinct:8},{raw:18,distinct:6},{raw:30,distinct:9},{raw:48,distinct:24}],'raw directional inputs and distinct cuts remain explicit');
+for(const level of campaign.levels){
+  const full=campaign.layoutHexes(hex.createInitialState(level),{maxWidth:356,maxHeight:310,maxRadius:70,padding:12});
+  const mini=campaign.layoutHexes(hex.createInitialState(level),{maxWidth:76,maxHeight:68,maxRadius:13,padding:3});
+  assert.ok(full.width<=356&&full.height<=310,`${level.title} full board fits its content box`);
+  assert.ok(mini.width<=76&&mini.height<=68,`${level.title} mini-board is locally scaled into its preview box`);
+  for(const cell of full.cells){const p=full.positionFor(cell);assert.ok(p.left>=12&&p.top>=12&&p.left+full.g.width<=full.width-12&&p.top+full.g.height<=full.height-12,`${level.title} includes complete hex polygons`)}
+}
 const waiting=campaign.levels[3],immediate=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;
 assert.equal(hex.settleFire(waiting,immediate).res.charcoal,0,'final Fire resolution does not activate a scheduled source whose player-triggered countdown was not reached');
 const afterWait=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'wait'}).state;
