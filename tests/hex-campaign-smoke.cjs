@@ -11,6 +11,7 @@ function woodCounts(def){const state=hex.createInitialState(def),actions=hex.get
 
 assert.equal(campaign.levels.length,5,'Lowlands has exactly five authored levels');
 assert.deepEqual(campaign.levels.map(level=>level.title),['First Cut','Fireline','Field & Forest','Waiting Spark','Crossroads']);
+assert.equal(campaign.levels.some(level=>level.tools.includes('forge')||level.wind),false,'Lowlands 1–5 does not introduce Forge or Wind');
 for(const level of campaign.levels)assert.equal(hex.validateDefinition(level).ok,true,`${level.title} validates against production hex rules`);
 assert.equal(Object.keys(campaign.levels[0].cells).length,7,'First Cut is a radius-one board');
 for(const level of campaign.levels.slice(1))assert.equal(Object.keys(level.cells).length,19,`${level.title} is a radius-two board`);
