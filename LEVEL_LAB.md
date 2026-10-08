@@ -25,6 +25,8 @@ Candidates contain their seed ID, a stable candidate ID, generation, optional pa
 - Oracle Solver v1 with replay-verified solutions and deterministic duplicate-state detection
 - Eight bounded heuristic agents: Balanced, Greedy Harvester, Max Yield, Forge First, Requirement Chaser, Fire Fearful, Wait Friendly and Action Conservator
 - Seeded ensemble runs, attempt traces, first-action distributions and post-run Oracle comparison
+- Reusable level analysis: opening/trap detection, agent contrasts, solution flexibility and multi-dimensional design signals
+- Campaign overview for Levels 1–15 (measurement only; no progression or level data is changed)
 - Candidate playthrough through the normal gameplay renderer
 - Extensible interfaces for metrics and generation
 
@@ -32,6 +34,7 @@ Candidates contain their seed ID, a stable candidate ID, generation, optional pa
 
 - Production-strength oracle optimization
 - Tuned/calibrated human-like solver ensemble
+- Empirically calibrated classification thresholds and large-scale candidate search
 - Large-scale mutation generation
 - Fitness/difficulty model
 - Evolutionary generations
