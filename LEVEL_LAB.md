@@ -1,5 +1,15 @@
 # Level Lab
 
+## Mutation batches (v1)
+
+Level Lab can now generate one deterministic batch of nearby variations around an immutable campaign seed. It never edits Levels 1–15 or campaign progress. A batch is identified by its seed level, RNG seed, mutation depth, candidate count, Oracle budget and ensemble budget.
+
+The v1 registry makes only local content changes: tree, wheat and ore additions/removals/moves; one-step requirement and move-limit changes; and local scheduled-fire/ignition timing changes. Resource additions only use plain ground and never overwrite houses, fire, void, or another object. Every accepted change is stored as human-readable mutation history.
+
+Pipeline: clone seed → mutate → structural/static validation → canonical level fingerprint de-duplication → Oracle → ensemble → Level Analysis. Oracle search-limit results remain **unresolved**, never unsolvable. Only Oracle-solved candidates receive the ensemble and design analysis by default.
+
+The Level Lab candidate browser is session-local. It supports sorting/filtering by independent signals, candidate details, pinning, JSON copy, and playing a candidate through the normal renderer. It intentionally does not select winners, promote a level into campaign, or perform multi-generation evolution.
+
 Level Lab is a developer-only foundation for exploring candidate Soot & Seed levels. Open a normal campaign level, expand **Developer controls**, then choose **Level Lab**. It is intentionally absent from player navigation and does not alter campaign progress.
 
 ## Shared simulation

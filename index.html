@@ -89,7 +89,7 @@
 </div></main>
 <div class="modal" id="modal" hidden><div class="card"><h2 id="modalTitle"></h2><p id="modalText"></p><div class="modal-actions"><button id="modalUndo" class="modal-undo" type="button" hidden>Undo turn</button><button id="modalButton"></button></div></div></div>
 <div id="resultModal" class="result-modal" hidden><section class="result-card" role="dialog" aria-modal="true" aria-labelledby="resultTitle"><div id="resultEyebrow" class="result-eyebrow"></div><h2 id="resultTitle"></h2><p id="resultLevel" class="result-level"></p><div id="resultSummary" class="result-summary"></div><p id="resultNote" class="result-note"></p><div id="resultActions" class="result-actions"></div></section></div>
-<script src="./game-simulation.js?v=scheduled-fire-markers-1"></script>
+<script src="./game-simulation.js"></script>
 <script>
 const T={ground:'ground',rock:'rock',water:'water',void:'void'};
 const O={tree:'tree',wheat:'wheat',ore:'ore',woodcutter:'woodcutter',forge:'forge',well:'well',house:'house',none:null};
@@ -456,17 +456,17 @@ showMenu();
 window.SootSeedGame={campaignEntries,loadCustomLevel,showScreen,showMenu};
 </script>
 <script src="./wait-campaign.js"></script>
-<script src="./level-lab/types.js"></script>
+<script src="./level-lab/types.js?v=level-lab-mutation-1"></script>
 <script src="./level-lab/rng.js"></script>
-<script src="./level-lab/candidates.js"></script>
-<script src="./level-lab/validation.js?v=scheduled-fire-markers-1"></script>
-<script src="./level-lab/mutations.js"></script>
+<script src="./level-lab/candidates.js?v=level-lab-mutation-1"></script>
+<script src="./level-lab/validation.js?v=level-lab-mutation-1"></script>
+<script src="./level-lab/mutations.js?v=level-lab-mutation-1"></script>
 <script src="./level-lab/solver.js"></script>
 <script src="./level-lab/agents.js"></script>
-<script src="./level-lab/analysis.js?v=level-lab-analysis-cache-2"></script>
-<script src="./level-lab/evaluation.js?v=level-lab-analysis-2"></script>
-<script src="./level-lab/generation.js"></script>
-<script src="./level-lab/candidate-store.js"></script>
-<script src="./level-lab/ui.js?v=level-lab-analysis-2"></script>
+<script src="./level-lab/analysis.js"></script>
+<script src="./level-lab/evaluation.js"></script>
+<script src="./level-lab/generation.js?v=level-lab-mutation-1"></script>
+<script src="./level-lab/candidate-store.js?v=level-lab-mutation-1"></script>
+<script src="./level-lab/ui.js?v=level-lab-mutation-1"></script>
 <script>SootSeedLevelLabUI.mount();</script>
 </body></html>
