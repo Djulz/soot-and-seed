@@ -10,6 +10,16 @@ Pipeline: clone seed → mutate → structural/static validation → canonical l
 
 The Level Lab candidate browser is session-local. It supports sorting/filtering by independent signals, candidate details, pinning, JSON copy, and playing a candidate through the normal renderer. It intentionally does not select winners, promote a level into campaign, or perform multi-generation evolution.
 
+## Quality-diversity search (v1)
+
+The developer-only QD search mutates archive representatives over several generations. It uses a small MAP-Elites-style grid rather than a global puzzle-quality score. The default **General** grid uses strategic constraint × strategy separation, five buckets per axis. Timing, Forge, Openness and Disagreement are alternative projections of the same evaluated candidates.
+
+An archive cell retains one representative through a transparent, local-only `archiveQuality`: Oracle confirmation, usable ensemble evidence, expressed behaviour, non-degenerate solution length, low loop rate and restrained distance from the root seed. It does **not** declare one candidate globally better than another.
+
+Parents are selected uniformly across occupied cells. Each child receives one or two local mutations, is deduplicated against every fingerprint seen in the run, and is evaluated through the same Oracle/ensemble/analysis pipeline. The search yields between small chunks, updates the archive progressively, and may be cancelled without discarding completed results.
+
+Pinned candidates are saved locally with schema version 1. They retain their level definition, lineage, fingerprint and evaluation data, but never enter campaign progression automatically.
+
 Level Lab is a developer-only foundation for exploring candidate Soot & Seed levels. Open a normal campaign level, expand **Developer controls**, then choose **Level Lab**. It is intentionally absent from player navigation and does not alter campaign progress.
 
 ## Shared simulation
