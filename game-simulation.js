@@ -9,7 +9,8 @@
   const DIR=[[1,0],[-1,0],[0,1],[0,-1]], AROUND=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
   const clone=value=>JSON.parse(JSON.stringify(value));
   const key=(r,c)=>`${r},${c}`;
-  const cellFrom=ch=>ch==='.'?{terrain:T.ground,object:null,state:'normal',wet:false}:ch==='F'?{terrain:T.ground,object:null,state:'active-fire',wet:false}:ch==='T'?{terrain:T.ground,object:O.tree,state:'normal',wet:false}:ch==='W'?{terrain:T.ground,object:O.wheat,state:'normal',wet:false}:ch==='H'?{terrain:T.ground,object:O.house,state:'normal',wet:false}:ch==='O'?{terrain:T.rock,object:O.ore,state:'normal',wet:false}:{terrain:T.void,object:null,state:'normal',wet:false};
+  // Campaign/custom source digits are scheduled-fire markers. Timing lives in `fires`; their terrain is Ground.
+  const cellFrom=ch=>ch==='.'||/[1-9]/.test(ch)?{terrain:T.ground,object:null,state:'normal',wet:false}:ch==='F'?{terrain:T.ground,object:null,state:'active-fire',wet:false}:ch==='T'?{terrain:T.ground,object:O.tree,state:'normal',wet:false}:ch==='W'?{terrain:T.ground,object:O.wheat,state:'normal',wet:false}:ch==='H'?{terrain:T.ground,object:O.house,state:'normal',wet:false}:ch==='O'?{terrain:T.rock,object:O.ore,state:'normal',wet:false}:{terrain:T.void,object:null,state:'normal',wet:false};
   const levelFires=level=>level.fires || (level.ignition?[level.ignition]:[]);
   function createInitialState(level){
     const state={cells:level.map.map(row=>[...row].map(cellFrom)),moves:level.moves,res:{wood:0,charcoal:0,wheat:0,iron:0},actions:0,houseLost:false,housesTotal:level.map.join('').split('H').length-1};
