@@ -23,6 +23,8 @@ for(const level of campaign.levels){
   const mini=campaign.layoutHexes(hex.createInitialState(level),{maxWidth:76,maxHeight:68,maxRadius:13,padding:3});
   assert.ok(full.width<=356&&full.height<=310,`${level.title} full board fits its content box`);
   assert.ok(mini.width<=76&&mini.height<=68,`${level.title} mini-board is locally scaled into its preview box`);
+  assert.equal(full.visualGap,3,`${level.title} uses one explicit gameplay seam width`);
+  assert.ok(Math.abs(Math.sqrt(3)*full.radius*(1-full.visualScale)-full.visualGap)<1e-9,`${level.title} derives the visible seam from regular hex geometry`);
   for(const cell of full.cells){const p=full.positionFor(cell);assert.ok(p.left>=12&&p.top>=12&&p.left+full.g.width<=full.width-12&&p.top+full.g.height<=full.height-12,`${level.title} includes complete hex polygons`)}
 }
 const waiting=campaign.levels[3],immediate=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;
