@@ -16,10 +16,10 @@ function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 assert.equal(campaign.levels.length,5,'Lowlands has exactly five authored levels');
 assert.match(productionSource,/let cursor = clone\(afterWorld\)/,'final fire waves owns its advancing cursor as mutable state');
 assert.doesNotMatch(productionSource,/renderPlay\s*=\s*function/,'production renderer is not reassigned at runtime');
-assert.deepEqual(timing,{POINTER_RESPONSE:70,DIRECTION_SNAP:60,HARVEST_STAGGER:150,LOCAL_HIT:120,RESOURCE_POP:120,RESOURCE_HOLD:280,RESOURCE_FLY:280,RESOURCE_FLY_STAGGER:40,HUD_BOUNCE:170,ACTION_WORLD_PAUSE:180,WORLD_TICK:120,FIRE_ANTICIPATION:120,FIRE_TRAVEL:180,FIRE_IGNITION:140,FIRE_SETTLE:160,SCHEDULED_IGNITION_PAUSE:120,FINAL_WAVE_PAUSE:150,STABLE_TO_RESULT:350,RESULT_ENTER:260},'the complete presentation timeline is centrally configured');
+assert.deepEqual(timing,{POINTER_RESPONSE:70,DIRECTION_SNAP:60,HARVEST_STAGGER:150,LOCAL_HIT:120,RESOURCE_POP:120,RESOURCE_HOLD:300,RESOURCE_FLY:300,RESOURCE_FLY_STAGGER:40,HUD_BOUNCE:170,ACTION_WORLD_PAUSE:200,WORLD_TICK:0,FIRE_ANTICIPATION:180,FIRE_TRAVEL:220,FIRE_TRAVEL_IMPACT_PAUSE:70,FIRE_IGNITION:160,FIRE_LIFECYCLE_SETTLE:160,SCHEDULED_IGNITION_PAUSE:120,AUTO_FIRE_WAVE_PAUSE:180,STABLE_TO_RESULT:350,RESULT_ENTER:260},'the complete presentation timeline is centrally configured');
 assert.equal(50+2*timing.HARVEST_STAGGER+timing.LOCAL_HIT,470,'three-tree Woodcutter action resolves as a readable 0/150/300ms chop rhythm');
-assert.equal(timing.RESOURCE_POP+timing.RESOURCE_HOLD+timing.RESOURCE_FLY,680,'each resource uses one pop/hold/fly pipeline before the HUD increment');
-assert.equal(timing.FIRE_ANTICIPATION+timing.FIRE_TRAVEL+timing.FIRE_IGNITION+timing.FIRE_SETTLE,600,'a normal Fire response has one coordinated 600ms visual grammar');
+assert.equal(timing.RESOURCE_POP+timing.RESOURCE_HOLD+timing.RESOURCE_FLY,720,'each resource uses one pop/hold/fly pipeline before the HUD increment');
+assert.equal(timing.FIRE_ANTICIPATION+timing.FIRE_TRAVEL+timing.FIRE_TRAVEL_IMPACT_PAUSE+timing.FIRE_IGNITION+timing.FIRE_LIFECYCLE_SETTLE,790,'a normal Fire response has one coordinated readable visual grammar');
 assert.deepEqual(campaign.levels.map(level=>level.title),['First Cut','Fireline','Field & Forest','Waiting Spark','Crossroads']);
 assert.equal(campaign.levels.some(level=>level.tools.includes('forge')||level.wind),false,'Lowlands 1–5 does not introduce Forge or Wind');
 for(const level of campaign.levels)assert.equal(hex.validateDefinition(level).ok,true,`${level.title} validates against production hex rules`);
