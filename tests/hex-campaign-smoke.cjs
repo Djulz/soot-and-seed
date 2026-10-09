@@ -8,6 +8,7 @@ function stable(def,state){return state.moves===0?hex.settleFire(def,state):stat
 function stateKey(state){return JSON.stringify({moves:state.moves,steps:state.worldSteps,res:state.res,cells:Object.values(state.cells).map(cell=>[cell.q,cell.r,cell.object,cell.fire]),fires:state.scheduledFires})}
 function solve(def){const queue=[{state:hex.createInitialState(def),actions:[]}],seen=new Set(),wins=[];while(queue.length){const current=queue.shift(),state=stable(def,current.state),key=stateKey(state);if(seen.has(key))continue;seen.add(key);if(state.won){wins.push(current.actions);continue}if(state.moves===0||state.lost||current.actions.length>7)continue;for(const action of hex.getLegalActions(def,state))queue.push({state:hex.applyAction(def,state,action).state,actions:[...current.actions,action]})}return wins}
 function woodCounts(def){const state=hex.createInitialState(def),actions=hex.getLegalActions(def,state).filter(action=>action.tool==='woodcutter'),results=new Set(actions.map(action=>hex.cutLine(state,action.q,action.r,action.direction).map(cell=>hex.key(cell.q,cell.r)).sort().join('|')));return{raw:actions.length,distinct:results.size}}
+function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 
 assert.equal(campaign.levels.length,5,'Lowlands has exactly five authored levels');
 assert.deepEqual(campaign.levels.map(level=>level.title),['First Cut','Fireline','Field & Forest','Waiting Spark','Crossroads']);
@@ -24,7 +25,13 @@ for(const level of campaign.levels){
   assert.ok(full.width<=356&&full.height<=310,`${level.title} full board fits its content box`);
   assert.ok(mini.width<=76&&mini.height<=68,`${level.title} mini-board is locally scaled into its preview box`);
   assert.equal(full.visualGap,3,`${level.title} uses one explicit gameplay seam width`);
-  assert.ok(Math.abs(Math.sqrt(3)*full.radius*(1-full.visualScale)-full.visualGap)<1e-9,`${level.title} derives the visible seam from regular hex geometry`);
+  assert.ok(Math.abs(full.g.width-2*full.radius)<1e-9,`${level.title} uses flat-top width = 2S`);
+  assert.ok(Math.abs(full.g.height-Math.sqrt(3)*full.radius)<1e-9,`${level.title} uses flat-top height = √3S`);
+  assert.ok(Math.abs(full.g.distance-(Math.sqrt(3)*full.radius+full.visualGap))<1e-9,`${level.title} uses D = √3S + G`);
+  const center=hex.point(0,0,full.radius,full.visualGap);
+  for(const [name,q,r] of hex.directions){const neighbour=hex.point(q,r,full.radius,full.visualGap);assert.ok(Math.abs(distance(center,neighbour)-full.g.distance)<1e-9,`${level.title} ${name} neighbour center is exactly D away`);assert.ok(Math.abs(distance(center,neighbour)-Math.sqrt(3)*full.radius-full.visualGap)<1e-9,`${level.title} ${name} visible gap is G`)}
+  const miniOrigin=hex.point(0,0,mini.radius,mini.visualGap),fullOrigin=hex.point(0,0,full.radius,full.visualGap),miniEast=hex.point(1,0,mini.radius,mini.visualGap),fullEast=hex.point(1,0,full.radius,full.visualGap);
+  assert.equal(Math.sign(miniEast.x-miniOrigin.x),Math.sign(fullEast.x-fullOrigin.x),`${level.title} thumbnail and gameplay share flat-top projection`);
   for(const cell of full.cells){const p=full.positionFor(cell);assert.ok(p.left>=12&&p.top>=12&&p.left+full.g.width<=full.width-12&&p.top+full.g.height<=full.height-12,`${level.title} includes complete hex polygons`)}
 }
 const waiting=campaign.levels[3],immediate=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;

@@ -4,9 +4,12 @@ const hex=globalThis.SootSeedHexLab;
 assert.equal(hex.directions.length,6,'Hex Lab has exactly six axial directions');
 assert.deepEqual(hex.neighbor(2,3,'NE'),[3,2],'NE uses the declared axial delta');
 assert.equal(new Set(hex.neighbors(2,3).map(item=>hex.key(item.q,item.r))).size,6,'every hex has six distinct neighbor coordinates');
-const g=hex.geometry(40);
-assert.equal(g.width/g.height,Math.sqrt(3)/2,'regular pointy-top hex ratio is preserved');
-assert.equal(Math.hypot(hex.point(1,0,40).x,hex.point(1,0,40).y),Math.hypot(hex.point(1,-1,40).x,hex.point(1,-1,40).y),'all six neighbor centres are equidistant');
+const g=hex.geometry(40,3);
+assert.equal(g.width,80,'regular flat-top hex width is 2S');
+assert.equal(g.height,Math.sqrt(3)*40,'regular flat-top hex height is √3S');
+assert.equal(g.width/g.height,2/Math.sqrt(3),'regular flat-top hex ratio is preserved');
+assert.equal(g.distance,Math.sqrt(3)*40+3,'center distance is D = √3S + G');
+for(const [,q,r] of hex.directions){const point=hex.point(q,r,40,3);assert.ok(Math.abs(Math.hypot(point.x,point.y)-g.distance)<1e-9,'all six neighbour centres are exactly D away');assert.ok(Math.abs(Math.hypot(point.x,point.y)-Math.sqrt(3)*40-3)<1e-9,'all six rendered edge gaps are G')}
 assert.equal(hex.directionForDrag(0,0,40),null,'central drag dead zone cancels direction selection');
 assert.equal(hex.directionForDrag(70,0,40),'E','dragging beyond the dead zone snaps to a hex axis');
 const a=hex.definitions.a,initial=hex.createInitialState(a),before=JSON.stringify(initial);
