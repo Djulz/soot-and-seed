@@ -29,6 +29,7 @@
     radius,
     features = [],
     scheduledFires = [],
+    chapter = "Lowlands",
   ) => {
     const cells = radialCells(radius);
     for (const [q, r, object, fire = "normal"] of features)
@@ -37,7 +38,7 @@
       id,
       number,
       title,
-      chapter: "Lowlands",
+      chapter,
       lesson,
       moves,
       req,
@@ -141,6 +142,11 @@
         [0, 2, "wheat"],
       ],
     ),
+    authored("ironwood-6",6,"First Forge","Forge uses adjacent Trees to process connected Ore.",2,{iron:2,wood:3},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
+    authored("ironwood-7",7,"Just Enough","Which Trees should become fuel?",3,{iron:2,wood:4},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"tree"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"],[-2,1,"tree"],[-2,0,"tree"]],[],"Ironwood"),
+    authored("ironwood-8",8,"Fuel or Ash","The same grove can become Iron, Wood, or Charcoal.",3,{iron:2,wood:3,charcoal:3},["forge","woodcutter","wait"],2,[[-2,0,"tree","active"],[-1,0,"tree"],[0,0,"tree"],[1,0,"tree"],[-1,-1,"tree"],[0,-1,"tree"],[1,-1,"ore"],[2,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
+    authored("ironwood-9",9,"Before the Spark","Shape the grove before the scheduled Fire arrives.",3,{iron:3,wood:3,charcoal:3},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ironwood"),
+    authored("ironwood-10",10,"Iron Crossing","Use the grove for Iron, Wood, Wheat, and Ash.",4,{iron:3,wood:5,charcoal:4,wheat:4},["forge","woodcutter","sickle","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[-3,2,"tree"],[-2,2,"tree"],[-1,2,"tree"],[2,0,"tree","active"],[3,0,"tree"],[2,-1,"tree"],[1,1,"tree"],[-3,0,"tree"],[-2,-1,"wheat"],[-1,-2,"wheat"],[0,-3,"wheat"],[-1,-1,"wheat"]],[{q:-3,r:0,after:4}],"Ironwood"),
   ];
   function progress() {
     try {
@@ -296,6 +302,10 @@
       return svg(
         '<path d="M11 10c14 1 21 10 21 24" stroke="#8a5535" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M17 9c13 3 18 12 15 21-4-7-10-10-18-10z" fill="#a6b5a7"/><path d="M18 10c10 4 14 10 14 20" stroke="#e0e6dd" stroke-width="1.4" fill="none"/>',
       );
+    if (kind === "forge")
+      return svg(
+        '<path d="M9 35h30l-4 7H13z" fill="#4c514c"/><path d="M14 35V19l7-8h12l4 8v16z" fill="#66706a"/><path d="M19 19h12v10H19z" fill="#d57b38"/><path d="M18 11h16l3 8H15z" fill="#8f9890"/><path d="M22 21h6v7h-6z" fill="#ffe19a"/>',
+      );
     if (kind === "wait")
       return svg(
         '<path d="M14 7h20M14 41h20M17 8c1 8 5 11 7 16-2 5-6 8-7 16M31 8c-1 8-5 11-7 16 2 5 6 8 7 16" fill="none" stroke="#75654f" stroke-width="3" stroke-linecap="round"/><path d="m19 14 10 10-10 10z" fill="#c58a42"/>',
@@ -337,7 +347,7 @@
         levels.find((level) => unlocked(level, p) && !completed(level, p)) ||
         levels.at(-1);
     if (label) label.textContent = p.completed.length ? "Continue" : "Begin";
-    if (sub) sub.textContent = `LOWLANDS · ${resume.number} · ${resume.title}`;
+    if (sub) sub.textContent = `${resume.chapter.toUpperCase()} · ${resume.number} · ${resume.title}`;
     if (begin) begin.onclick = () => launch(resume.id);
     if (select) select.onclick = showCampaign;
   }
@@ -392,6 +402,7 @@
     logs = [],
     tool = null,
     preview = [],
+    forgePreview = null,
     gesture = null,
     ended = false,
     notice = "",
@@ -927,6 +938,7 @@
     history = [];
     logs = [];
     tool = null;
+    forgePreview = null;
     ended = false;
     notice = "";
     invalidInput = null;
@@ -950,6 +962,7 @@
       visualState = before;
       logs.push(result.log);
       tool = null;
+      forgePreview = null;
       clearGesture();
       renderPlay();
       playPresentation(action, before, afterWorld, waves, finalState);
@@ -973,11 +986,16 @@
     if (!home) return;
     home.hidden = false;
     document.querySelector("#hexCampaignPlay").hidden = true;
-    home.innerHTML = `<p class="eyebrow">Chapter 1</p><h1>Lowlands</h1><p class="hex-campaign-lead">Learn how a cut changes what the Fire can reach.</p><div class="hex-level-list">${levels
-      .map((level) => {
+    const chapterIntro = {
+      Lowlands: "Learn how a cut changes what the Fire can reach.",
+      Ironwood: "Forge turns neighbouring Trees and connected Ore into Iron.",
+    };
+    home.innerHTML = `<div class="hex-level-list">${levels
+      .map((level, index) => {
         const ready = unlocked(level, p),
           done = completed(level, p);
-        return `<button class="hex-level-card ${ready ? "ready" : "locked"}" data-level="${level.id}" ${ready ? "" : "disabled"}>${mini(level)}<span class="hex-card-copy"><b>${level.number} · ${level.title}</b><small>${done ? "Secured" : ready ? "Ready" : "Locked"}</small></span></button>`;
+        const startsChapter = index === 0 || levels[index - 1].chapter !== level.chapter;
+        return `${startsChapter ? `<section class="hex-chapter"><p class="eyebrow">Chapter ${level.chapter === "Lowlands" ? 1 : 2}</p><h1>${level.chapter}</h1><p class="hex-campaign-lead">${chapterIntro[level.chapter]}</p></section>` : ""}<button class="hex-level-card ${ready ? "ready" : "locked"}" data-level="${level.id}" ${ready ? "" : "disabled"}>${mini(level)}<span class="hex-card-copy"><b>${level.number} · ${level.title}</b><small>${done ? "Secured" : ready ? "Ready" : "Locked"}</small></span></button>`;
       })
       .join(
         "",
@@ -1008,7 +1026,7 @@
     const success = state.won && !state.lost,
       next = levels.find((level) => level.number === active.number + 1),
       disabled = resultReady ? "" : "disabled";
-    return `<section class="hex-result ${success ? "success" : "failure"}" aria-live="polite"><p class="eyebrow">${success ? "LOWLANDS SECURED" : "TRY AGAIN"}</p><h2>${success ? "Land Secured" : "The land needs another path."}</h2><p>${success ? "Every goal is met." : notice || "Undo the last action or restart this puzzle."}</p><div>${success && next ? `<button id="hexNext" ${disabled}>Next Puzzle</button>` : ""}<button id="hexResultReplay" ${disabled}>Replay</button><button id="hexResultSelect" ${disabled}>Puzzle Select</button>${!success && history.length ? `<button id="hexResultUndo" ${disabled}>Undo</button>` : ""}</div></section>`;
+    return `<section class="hex-result ${success ? "success" : "failure"}" aria-live="polite"><p class="eyebrow">${success ? `${active.chapter.toUpperCase()} SECURED` : "TRY AGAIN"}</p><h2>${success ? "Land Secured" : "The land needs another path."}</h2><p>${success ? "Every goal is met." : notice || "Undo the last action or restart this puzzle."}</p><div>${success && next ? `<button id="hexNext" ${disabled}>Next Puzzle</button>` : ""}<button id="hexResultReplay" ${disabled}>Replay</button><button id="hexResultSelect" ${disabled}>Puzzle Select</button>${!success && history.length ? `<button id="hexResultUndo" ${disabled}>Undo</button>` : ""}</div></section>`;
   }
   function renderPlay() {
     const host = document.querySelector("#hexCampaignPlay");
@@ -1032,7 +1050,7 @@
         : "",
       playControls = ended
         ? resultPanel()
-        : `<div class="hex-campaign-tools">${active.tools.includes("woodcutter") ? `<div class="tool-card direct-tool">${asset("woodcutter")}<span><b>Woodcutter</b><small>Swipe Trees</small></span></div>` : ""}${active.tools.includes("sickle") ? `<div class="tool-card direct-tool">${asset("sickle")}<span><b>Sickle</b><small>Tap Wheat</small></span></div>` : ""}${active.tools.includes("forge") ? `<button class="tool-card ${tool === "forge" ? "selected" : ""}" data-tool="forge">${asset("forge")}<span><b>Forge</b><small>Place on a hex</small></span></button>` : ""}${active.tools.includes("wait") ? `<button id="hexWait" class="tool-card">${asset("wait")}<span><b>WAIT</b><small>0 moves · advance world</small></span></button>` : ""}</div><div class="hex-campaign-actions"><button id="hexUndo" ${history.length && !effectsLocked ? "" : "disabled"}>↶ Undo</button><button id="hexRestart">Restart</button></div><p class="hex-play-note">${gesture ? (gesture.direction ? `Release to cut ${preview.length} Tree${preview.length === 1 ? "" : "s"}.` : "Return to the centre to cancel.") : notice || " "}</p>`;
+        : `<div class="hex-campaign-tools">${active.tools.includes("woodcutter") ? `<div class="tool-card direct-tool">${asset("woodcutter")}<span><b>Woodcutter</b><small>Swipe Trees</small></span></div>` : ""}${active.tools.includes("sickle") ? `<div class="tool-card direct-tool">${asset("sickle")}<span><b>Sickle</b><small>Tap Wheat</small></span></div>` : ""}${active.tools.includes("forge") ? `<button class="tool-card ${tool === "forge" ? "selected" : ""}" data-tool="forge">${asset("forge")}<span><b>Forge</b><small>Place on a hex</small></span></button>` : ""}${active.tools.includes("wait") ? `<button id="hexWait" class="tool-card">${asset("wait")}<span><b>WAIT</b><small>0 moves · advance world</small></span></button>` : ""}</div><div class="hex-campaign-actions"><button id="hexUndo" ${history.length && !effectsLocked ? "" : "disabled"}>↶ Undo</button><button id="hexRestart">Restart</button></div><p class="hex-play-note">${gesture ? (gesture.direction ? `Release to cut ${preview.length} Tree${preview.length === 1 ? "" : "s"}.` : "Return to the centre to cancel.") : forgePreview ? `Forge preview · centre replaces ${forgePreview.center.object || "Ground"} · ${forgePreview.fuel.length} fuel Tree${forgePreview.fuel.length === 1 ? "" : "s"} · ${forgePreview.ore.length} Iron.` : notice || " "}</p>`;
     const hudState = { ...display, moves: state.moves };
     host.innerHTML = `<header class="hex-play-head"><button id="hexPlayBack" type="button">‹ Puzzles</button><span><small>LEVEL ${active.number}</small>${active.title}</span></header>${active.lesson ? `<p class="hex-lesson">${active.lesson}</p>` : ""}<div class="hex-resources">${statusText(active, hudState, shownRes || state.res)}</div><div id="hexCampaignBoard" class="hex-board hex-campaign-board" aria-label="${active.title} hex board" style="width:${l.width}px;height:${l.height}px;--hex-gap:${l.visualGap}px">${sweep}<div class="hex-effect-layer" aria-hidden="true"></div>${l.cells
       .map((cell) => {
@@ -1047,6 +1065,15 @@
             : grabbed
               ? "grabbed"
               : "",
+          forgeRole = forgePreview
+            ? cell.q === forgePreview.center.q && cell.r === forgePreview.center.r
+              ? "forge-centre"
+              : forgePreview.fuel.some((x) => x.q === cell.q && x.r === cell.r)
+                ? "forge-fuel"
+                : forgePreview.ore.some((x) => x.q === cell.q && x.r === cell.r)
+                  ? "forge-ore"
+                  : ""
+            : "",
           classes = [
             "hex-tile",
             cell.object || "",
@@ -1054,6 +1081,7 @@
             cell.fire === "dying" ? "dying" : "",
             cell.fire === "burnt" ? "burnt" : "",
             previewClass,
+            forgeRole,
             invalid ? "invalid-input" : "",
           ]
             .filter(Boolean)
@@ -1078,6 +1106,7 @@
       shownRes = clone(state.res);
       logs.pop();
       tool = null;
+      forgePreview = null;
       preview = [];
       gesture = null;
       ended = false;
@@ -1089,6 +1118,7 @@
         (button.onclick = () => {
           tool = tool === button.dataset.tool ? null : button.dataset.tool;
           preview = [];
+          forgePreview = null;
           notice = "";
           renderPlay();
         }),
@@ -1110,6 +1140,7 @@
       shownRes = clone(state.res);
       logs.pop();
       tool = null;
+      forgePreview = null;
       preview = [];
       gesture = null;
       ended = false;
@@ -1223,9 +1254,17 @@
       const cell = cellFromEvent(event);
       if (ended || effectsLocked || pendingResult || !cell) return;
       if (tool === "forge") {
-        if (hex.forgePlan(state, cell.q, cell.r)?.count)
-          commit({ tool: "forge", q: cell.q, r: cell.r });
-        else flashInvalid(cell);
+        const plan = hex.forgePlan(state, cell.q, cell.r);
+        if (!plan?.count) flashInvalid(cell);
+        else if (
+          forgePreview?.center.q === plan.center.q &&
+          forgePreview?.center.r === plan.center.r
+        ) commit({ tool: "forge", q: cell.q, r: cell.r });
+        else {
+          forgePreview = plan;
+          preview = [plan.center, ...plan.fuel, ...plan.ore];
+          renderPlay();
+        }
         return;
       }
       if (canDirect("sickle")) {
@@ -1332,6 +1371,7 @@
   .hex-campaign-board .hex-tile{transform:scale(var(--hex-scale,1));transform-origin:center}.hex-mini i{transform:scale(var(--hex-scale,1));transform-origin:center}.hex-campaign-board .hex-tile.preview{transform:translateY(-2px) scale(calc(var(--hex-scale,1) + .025))!important}.hex-campaign-board .hex-tile.preview-start,.hex-campaign-board .hex-tile.grabbed{filter:brightness(1.15) drop-shadow(0 3px 3px #34472d77)!important;z-index:5}.hex-campaign-board .hex-tile.preview-follow{z-index:4}.hex-campaign-board .hex-tile.direction-snap{animation:hex-direction-snap .14s ease-out}.hex-campaign-board .hex-tile.hit{animation:hex-hit .16s ease-out}.hex-campaign-board .hex-tile.ignite{animation:hex-ignite .22s ease-out}.hex-campaign-board .hex-tile.invalid-input{animation:hex-invalid .18s ease-in-out}.hex-effect-layer{position:absolute;inset:0;z-index:8;pointer-events:none}.hex-transient{position:fixed;pointer-events:none;z-index:99;transform:translate(-50%,-50%)}.hex-hit{border-radius:50%;box-sizing:border-box;transform:translate(-50%,-50%) rotate(-35deg) scale(.38);opacity:0;animation:hex-hit-mark .17s ease-out}.hex-hit::after{content:"";position:absolute;left:47%;top:-8%;width:5px;height:116%;border-radius:6px;background:#fffdf0;box-shadow:7px 8px 0 -1px #e2bb7c,-8px 19px 0 -2px #c58448}.hex-result-token{display:grid;place-items:center;opacity:0;transform:translate(-50%,-50%) scale(.65);filter:drop-shadow(0 2px 2px #2b261c66);transition:opacity .1s ease,transform .13s cubic-bezier(.2,.9,.3,1.2)}.hex-result-token.visible{opacity:1;transform:translate(-50%,-50%) scale(1)}.hex-result-token .hex-asset{width:100%;height:100%}.hex-ignite{border-radius:50%;background:radial-gradient(circle,#ffe197 0 12%,#ef8b3c 16% 36%,#b84e32 40%,transparent 68%);animation:hex-ember .23s ease-out}.hex-flight{position:fixed;z-index:99;width:28px;height:28px;pointer-events:none;transform:translate(-50%,-50%) scale(.8);opacity:1;transition:transform .28s cubic-bezier(.2,.75,.25,1),opacity .28s ease}.hex-flight .hex-asset{width:100%;height:100%;filter:drop-shadow(0 2px 2px #392f2266)}.hex-flight.flying{transform:translate(calc(-50% + var(--flight-x)),calc(-50% + var(--flight-y))) scale(.55);opacity:.4}.goal-token.hud-bump .goal-value,.goal-token.hud-bump>.hex-asset{animation:hex-hud-bump .18s ease-out}.hex-campaign-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-top:12px}.hex-campaign-tools .tool-card{min-height:64px;display:flex;align-items:center;justify-content:flex-start;gap:8px;text-align:left;border:1px solid #ded2bd;border-radius:13px;background:#fffaf0;box-shadow:0 2px 6px #715c3e18,inset 0 1px #fffdf6;padding:8px 10px}.tool-card .hex-asset{width:36px;height:36px;flex:none;filter:drop-shadow(0 2px 1px #59463144)}.tool-card span{display:grid;gap:2px}.tool-card b{font-size:.87rem;color:#464035}.tool-card small{font-size:.67rem;color:#807568}.tool-card.selected{background:#e5efda;border-color:#96ac82;box-shadow:inset 0 -2px #7890672e,0 2px 6px #5f71451c}.hex-campaign-actions{justify-content:center;margin:10px 0 3px}.hex-campaign-actions button{border-color:#d4c4ab;background:#fffaf0;color:#6d6356}.hex-play-note{margin:3px 0;min-height:1.25em;text-align:center;color:#776343;font-size:.78rem;font-weight:700}.hex-dev-trace{margin:12px 0 0;color:#8b8173;font-size:.72rem}.hex-dev-trace ol{margin:6px 0;padding-left:18px}
   .hex-result{position:relative;margin:13px 0 4px;padding:18px;border:1px solid #d8c6a8;border-radius:15px;background:#fff9ed;box-shadow:0 8px 24px #59452c22;text-align:center}.hex-result.success{border-color:#a7bd88;background:#f1f6e9}.hex-result h2{margin:2px 0 5px;font-family:Georgia,serif;color:#3d4938}.hex-result p{margin:0 0 12px;color:#706555;font-size:.85rem}.hex-result>div{display:flex;justify-content:center;gap:7px;flex-wrap:wrap}.hex-result button{background:#fffaf0;border-color:#cdb58e;color:#544a3c}.hex-result.success button:first-child{background:#70885a;border-color:#60774d;color:#fffdf3}
   @keyframes hex-direction-snap{0%{filter:brightness(1.32)}100%{filter:brightness(1.08)}}@keyframes hex-hit{0%,100%{transform:scale(var(--hex-scale,1))}45%{transform:scale(.91) translateY(2px)}}@keyframes hex-hit-mark{0%{opacity:1;transform:translate(-50%,-50%) rotate(-35deg) scale(.32)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-35deg) scale(1.14)}}@keyframes hex-ignite{0%{filter:brightness(1)}45%{filter:brightness(1.35) saturate(1.35)}100%{filter:brightness(1)}}@keyframes hex-ember{0%{transform:scale(.2);opacity:0}35%{opacity:1}100%{transform:scale(1.35);opacity:0}}@keyframes hex-invalid{0%,100%{transform:scale(var(--hex-scale,1))}28%{transform:translateX(-3px) scale(var(--hex-scale,1))}70%{transform:translateX(3px) scale(var(--hex-scale,1))}}@keyframes hex-hud-bump{0%,100%{transform:scale(1)}45%{transform:scale(1.18)}}@media(prefers-reduced-motion:reduce){.hex-campaign-board .hex-tile,.hex-result-token,.hex-flight{transition-duration:.01ms!important;animation-duration:.01ms!important}.hex-cut-sweep path{transition:none}.hex-hit,.hex-ignite{display:none}}
+  .hex-campaign-board .hex-tile.forge-centre{outline:3px solid #f0ca72;outline-offset:-9px}.hex-campaign-board .hex-tile.forge-fuel{filter:brightness(1.16) sepia(.22)!important}.hex-campaign-board .hex-tile.forge-ore{filter:brightness(1.13) saturate(.75)!important}
   @media(max-width:390px){.hex-campaign{padding-left:8px;padding-right:8px}.hex-resources{gap:5px}.hex-resources .goal-token{padding:5px}.hex-campaign-tools{grid-template-columns:1fr}.hex-campaign-board{border-width:6px}}
 `;
   document.head.append(style);
