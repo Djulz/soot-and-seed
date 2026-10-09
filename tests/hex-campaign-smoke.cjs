@@ -1,9 +1,11 @@
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
 require('../hex-lab.js');
 require('../hex-production.js');
 const hex=globalThis.SootSeedHexLab;
 const campaign=globalThis.SootSeedHexCampaign;
 const timing=campaign.presentationTiming;
+const productionSource=fs.readFileSync(require.resolve('../hex-production.js'),'utf8');
 
 function stable(def,state){return state.moves===0?hex.settleFire(def,state):state}
 function stateKey(state){return JSON.stringify({moves:state.moves,steps:state.worldSteps,res:state.res,cells:Object.values(state.cells).map(cell=>[cell.q,cell.r,cell.object,cell.fire]),fires:state.scheduledFires})}
@@ -12,6 +14,8 @@ function woodCounts(def){const state=hex.createInitialState(def),actions=hex.get
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 
 assert.equal(campaign.levels.length,5,'Lowlands has exactly five authored levels');
+assert.match(productionSource,/let cursor = clone\(afterWorld\)/,'final fire waves owns its advancing cursor as mutable state');
+assert.doesNotMatch(productionSource,/renderPlay\s*=\s*function/,'production renderer is not reassigned at runtime');
 assert.deepEqual(timing,{POINTER_RESPONSE:70,DIRECTION_SNAP:60,HARVEST_STAGGER:150,LOCAL_HIT:120,RESOURCE_POP:120,RESOURCE_HOLD:280,RESOURCE_FLY:280,RESOURCE_FLY_STAGGER:40,HUD_BOUNCE:170,ACTION_WORLD_PAUSE:180,WORLD_TICK:120,FIRE_ANTICIPATION:120,FIRE_TRAVEL:180,FIRE_IGNITION:140,FIRE_SETTLE:160,SCHEDULED_IGNITION_PAUSE:120,FINAL_WAVE_PAUSE:150,STABLE_TO_RESULT:350,RESULT_ENTER:260},'the complete presentation timeline is centrally configured');
 assert.equal(50+2*timing.HARVEST_STAGGER+timing.LOCAL_HIT,470,'three-tree Woodcutter action resolves as a readable 0/150/300ms chop rhythm');
 assert.equal(timing.RESOURCE_POP+timing.RESOURCE_HOLD+timing.RESOURCE_FLY,680,'each resource uses one pop/hold/fly pipeline before the HUD increment');
@@ -44,4 +48,11 @@ assert.equal(hex.settleFire(waiting,immediate).res.charcoal,0,'final Fire resolu
 const afterWait=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'wait'}).state;
 const timed=hex.applyAction(waiting,afterWait,{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;
 assert.equal(hex.settleFire(waiting,timed).won,true,'WAIT then Woodcutter reaches the scheduled Fire and real win');
+const directions=['E','NE','NW','W','SW','SE'];
+for(let i=0;i<50;i++){
+  const level=campaign.levels[i%campaign.levels.length],initial=hex.createInitialState(level);
+  const legal=hex.getLegalActions(level,initial).filter(action=>action.tool==='woodcutter');
+  const preferred=legal.find(action=>action.direction===directions[i%directions.length])||legal[0];
+  if(preferred)assert.doesNotThrow(()=>hex.applyAction(level,initial,preferred),`gesture stress action ${i+1} applies cleanly`);
+}
 console.log('Hex campaign smoke tests passed.');
