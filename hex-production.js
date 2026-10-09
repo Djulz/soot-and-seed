@@ -1143,6 +1143,17 @@
       tile.classList.add("direction-snap");
     });
   }
+  function paintGesturePreview(board) {
+    const selected = new Set(preview.map((cell) => cellKey(cell.q, cell.r)));
+    board?.querySelectorAll(".hex-tile").forEach((tile) => {
+      const key = cellKey(+tile.dataset.q, +tile.dataset.r);
+      const grabbed = gesture?.q === +tile.dataset.q && gesture?.r === +tile.dataset.r;
+      tile.classList.toggle("grabbed", grabbed && !selected.has(key));
+      tile.classList.toggle("preview", selected.has(key));
+      tile.classList.toggle("preview-start", selected.has(key) && grabbed);
+      tile.classList.toggle("preview-follow", selected.has(key) && !grabbed);
+    });
+  }
   function bindBoard(board, radius, gap = 0) {
     const cellFromEvent = (event) => {
         const button = event.target.closest?.(".hex-tile");
@@ -1171,6 +1182,7 @@
         gestureBoard = board;
         board.setPointerCapture?.(event.pointerId);
         event.preventDefault();
+        paintGesturePreview(board);
       } else if (cell && cell.object !== "wheat") flashInvalid(cell);
     };
     board.onpointermove = (event) => {
@@ -1187,7 +1199,7 @@
         preview = direction
           ? hex.cutLine(state, gesture.q, gesture.r, direction)
           : [];
-        renderPlay();
+        paintGesturePreview(board);
         if (direction) pulsePreview();
       }
     };
