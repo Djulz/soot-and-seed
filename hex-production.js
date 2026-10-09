@@ -348,18 +348,19 @@
     HARVEST_STAGGER: 150,
     LOCAL_HIT: 120,
     RESOURCE_POP: 120,
-    RESOURCE_HOLD: 280,
-    RESOURCE_FLY: 280,
+    RESOURCE_HOLD: 300,
+    RESOURCE_FLY: 300,
     RESOURCE_FLY_STAGGER: 40,
     HUD_BOUNCE: 170,
-    ACTION_WORLD_PAUSE: 180,
-    WORLD_TICK: 120,
-    FIRE_ANTICIPATION: 120,
-    FIRE_TRAVEL: 180,
-    FIRE_IGNITION: 140,
-    FIRE_SETTLE: 160,
+    ACTION_WORLD_PAUSE: 200,
+    WORLD_TICK: 0,
+    FIRE_ANTICIPATION: 180,
+    FIRE_TRAVEL: 220,
+    FIRE_TRAVEL_IMPACT_PAUSE: 70,
+    FIRE_IGNITION: 160,
+    FIRE_LIFECYCLE_SETTLE: 160,
     SCHEDULED_IGNITION_PAUSE: 120,
-    FINAL_WAVE_PAUSE: 150,
+    AUTO_FIRE_WAVE_PAUSE: 180,
     STABLE_TO_RESULT: 350,
     RESULT_ENTER: 260,
   });
@@ -544,6 +545,7 @@
       `${to.top + to.height / 2 - (from.top + from.height / 2)}px`,
     );
     root.document.body.append(flight);
+    if (!flight.isConnected) return;
     token.remove();
     if (reducedMotion()) {
       bumpResource(kind);
@@ -551,7 +553,9 @@
       onArrival?.();
       return;
     }
-    requestAnimationFrame(() => flight.classList.add("flying"));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => flight.classList.add("flying")),
+    );
     later(() => {
       bumpResource(kind);
       flight.remove();
@@ -784,11 +788,10 @@
     const directDone = kind
       ? 50 + (direct.length - 1) * stagger + TIMING.LOCAL_HIT
       : 90;
-    queue.cursor = Math.max(queue.cursor, directDone);
+    queue.cursor = Math.max(queue.cursor, directDone, lastResourceArrival);
     queue.after(TIMING.ACTION_WORLD_PAUSE, () =>
       advanceWorldCounter(afterWorld.worldSteps),
     );
-    queue.after(TIMING.WORLD_TICK);
     const sources = Object.values(before.cells).filter(
         (cell) => cell.fire === "active",
       ),
@@ -807,7 +810,8 @@
       queue.after(TIMING.FIRE_ANTICIPATION, () =>
         showFireTravel(sources, normalIgnitions),
       );
-      queue.after(TIMING.FIRE_TRAVEL, () => {
+      queue.after(TIMING.FIRE_TRAVEL);
+      queue.after(TIMING.FIRE_TRAVEL_IMPACT_PAUSE, () => {
         visualState = normalView;
         renderPlay();
         normalIgnitions.forEach((cell, index) =>
@@ -819,6 +823,7 @@
         const at =
           normalImpactAt +
           TIMING.FIRE_IGNITION +
+          TIMING.FIRE_LIFECYCLE_SETTLE +
           index * TIMING.RESOURCE_FLY_STAGGER;
         queue.at(at, () => showResource(cell.q, cell.r, "charcoal"));
         lastResourceArrival = Math.max(
@@ -831,7 +836,7 @@
                 TIMING.RESOURCE_FLY),
         );
       });
-      queue.after(TIMING.FIRE_IGNITION + TIMING.FIRE_SETTLE);
+      queue.after(TIMING.FIRE_IGNITION + TIMING.FIRE_LIFECYCLE_SETTLE);
     } else {
       queue.parallel(() => {
         visualState = normalView;
@@ -847,7 +852,7 @@
       });
     }
     for (const wave of waves) {
-      queue.after(TIMING.FINAL_WAVE_PAUSE, () =>
+      queue.after(TIMING.AUTO_FIRE_WAVE_PAUSE, () =>
         pulseFires(
           Object.values(wave.before.cells).filter(
             (cell) => cell.fire === "active",
@@ -859,7 +864,7 @@
           cell.fire === "active" &&
           wave.before.cells[cellKey(cell.q, cell.r)]?.fire !== "active",
       );
-      queue.after(reducedMotion() ? 20 : 90, () =>
+      queue.after(TIMING.FIRE_ANTICIPATION, () =>
         showFireTravel(
           Object.values(wave.before.cells).filter(
             (cell) => cell.fire === "active",
@@ -867,7 +872,8 @@
           targets,
         ),
       );
-      queue.after(reducedMotion() ? 20 : 150, () => {
+      queue.after(TIMING.FIRE_TRAVEL);
+      queue.after(TIMING.FIRE_TRAVEL_IMPACT_PAUSE, () => {
         visualState = wave.after;
         renderPlay();
         targets.forEach((cell, index) =>
@@ -876,7 +882,11 @@
       });
       const waveImpactAt = queue.cursor;
       newCharcoal(wave.before, wave.after).forEach((cell, index) => {
-        const at = waveImpactAt + 120 + index * TIMING.RESOURCE_FLY_STAGGER;
+        const at =
+          waveImpactAt +
+          TIMING.FIRE_IGNITION +
+          TIMING.FIRE_LIFECYCLE_SETTLE +
+          index * TIMING.RESOURCE_FLY_STAGGER;
         queue.at(at, () => showResource(cell.q, cell.r, "charcoal"));
         lastResourceArrival = Math.max(
           lastResourceArrival,
@@ -888,7 +898,7 @@
                 TIMING.RESOURCE_FLY),
         );
       });
-      queue.after(reducedMotion() ? 20 : TIMING.FIRE_IGNITION + 120);
+      queue.after(TIMING.FIRE_IGNITION + TIMING.FIRE_LIFECYCLE_SETTLE);
     }
     queue.finish(() => {
       visualState = finalState;
@@ -1260,8 +1270,8 @@
   .hex-campaign-board .hex-object{width:86%;height:86%}
   .hex-campaign-board .hex-object .active-fire-token{width:92%;height:92%}
   .hex-campaign-board .hex-object .dying-fire-token{width:67%;height:67%}
-  body .hex-flight{width:var(--flight-size,30px);height:var(--flight-size,30px);transform:translate(-50%,-50%) scale(1)}
-  body .hex-flight.flying{transform:translate(calc(-50% + var(--flight-x)),calc(-50% + var(--flight-y))) scale(var(--flight-end-scale,.55))}
+  body .hex-flight{display:grid;place-items:center;z-index:120;width:var(--flight-size,30px);height:var(--flight-size,30px);opacity:1;will-change:transform,opacity;transform:translate(-50%,-50%) scale(1)}
+  body .hex-flight.flying{transform:translate(calc(-50% + var(--flight-x)),calc(-50% + var(--flight-y))) scale(var(--flight-end-scale,.55));opacity:.18}
   .hex-result-token{transition:opacity .1s ease,transform .13s cubic-bezier(.2,.9,.3,1.2)}
 `;document.head.append(style)})(globalThis);
 
