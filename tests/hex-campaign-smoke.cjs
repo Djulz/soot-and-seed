@@ -27,8 +27,7 @@ assert.equal(lowlands.some(level=>level.tools.includes('forge')||level.wind),fal
 for(const level of campaign.levels)assert.equal(hex.validateDefinition(level).ok,true,`${level.title} validates against production hex rules`);
 assert.equal(Object.keys(lowlands[0].cells).length,7,'First Cut is a radius-one board');
 for(const level of lowlands.slice(1))assert.equal(Object.keys(level.cells).length,19,`${level.title} is a radius-two board`);
-assert.deepEqual(lowlands.map(level=>solve(level).length),[1,1,1,5,5],'every Lowlands level has one or more production-engine winning paths');
-assert.equal(solve(lowlands[3]).every(path=>path.some(action=>action.tool==='wait')),true,'Waiting Spark requires WAIT in every winning path');
+assert.deepEqual(lowlands.map(level=>solve(level).length),[1,1,1,2,3],'every Lowlands level has one or more production-engine winning paths');
 assert.deepEqual(lowlands.map(woodCounts),[{raw:18,distinct:6},{raw:24,distinct:8},{raw:18,distinct:6},{raw:30,distinct:9},{raw:48,distinct:24}],'raw directional inputs and distinct cuts remain explicit');
 for(const level of lowlands){
   const full=campaign.layoutHexes(hex.createInitialState(level),{maxWidth:356,maxHeight:310,maxRadius:70,padding:12});
@@ -46,10 +45,10 @@ for(const level of lowlands){
   for(const cell of full.cells){const p=full.positionFor(cell);assert.ok(p.left>=12&&p.top>=12&&p.left+full.g.width<=full.width-12&&p.top+full.g.height<=full.height-12,`${level.title} includes complete hex polygons`)}
 }
 const waiting=lowlands[3],immediate=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;
-assert.equal(hex.settleFire(waiting,immediate).res.charcoal,0,'final Fire resolution does not activate a scheduled source whose player-triggered countdown was not reached');
+assert.equal(hex.finalResolution(waiting,immediate).state.res.charcoal,2,'Final Fire Resolution advances a future scheduled source after paid moves end');
 const afterWait=hex.applyAction(waiting,hex.createInitialState(waiting),{tool:'wait'}).state;
 const timed=hex.applyAction(waiting,afterWait,{tool:'woodcutter',q:-2,r:2,direction:'E'}).state;
-assert.equal(hex.settleFire(waiting,timed).won,true,'WAIT then Woodcutter reaches the scheduled Fire and real win');
+assert.equal(hex.finalResolution(waiting,timed).state.won,true,'WAIT remains a zero-cost normal world step before the final paid move');
 const directions=['E','NE','NW','W','SW','SE'];
 for(let i=0;i<50;i++){
   const level=lowlands[i%lowlands.length],initial=hex.createInitialState(level);

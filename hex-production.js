@@ -103,7 +103,7 @@
       "lowlands-4",
       4,
       "Waiting Spark",
-      "WAIT advances the world without spending a move.",
+      "After your final paid move, every Scheduled Fire resolves automatically.",
       1,
       { wood: 3, charcoal: 2 },
       ["woodcutter", "wait"],
@@ -142,10 +142,10 @@
         [0, 2, "wheat"],
       ],
     ),
-    authored("ironwood-6",6,"First Forge","Forge uses adjacent Trees to process connected Ore.",2,{iron:2,wood:3},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
+    authored("ironwood-6",6,"First Forge","Forge burns every adjacent Tree. Each can process 1 Ore.",2,{iron:2,wood:3},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
     authored("ironwood-7",7,"Just Enough","Which Trees should become fuel?",3,{iron:2,wood:4},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"tree"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"],[-2,1,"tree"],[-2,0,"tree"]],[],"Ironwood"),
     authored("ironwood-8",8,"Fuel or Ash","The same grove can become Iron, Wood, or Charcoal.",3,{iron:2,wood:3,charcoal:3},["forge","woodcutter","wait"],2,[[-2,0,"tree","active"],[-1,0,"tree"],[0,0,"tree"],[1,0,"tree"],[-1,-1,"tree"],[0,-1,"tree"],[1,-1,"ore"],[2,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
-    authored("ironwood-9",9,"Before the Spark","Shape the grove before the scheduled Fire arrives.",3,{iron:3,wood:3,charcoal:3},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ironwood"),
+    authored("ironwood-9",9,"Before the Spark","A Scheduled Fire continues after your final paid move.",3,{iron:3,wood:3,charcoal:3},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ironwood"),
     authored("ironwood-10",10,"Iron Crossing","Use the grove for Iron, Wood, Wheat, and Ash.",4,{iron:3,wood:5,charcoal:4,wheat:4},["forge","woodcutter","sickle","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[-3,2,"tree"],[-2,2,"tree"],[-1,2,"tree"],[2,0,"tree","active"],[3,0,"tree"],[2,-1,"tree"],[1,1,"tree"],[-3,0,"tree"],[-2,-1,"wheat"],[-1,-2,"wheat"],[0,-3,"wheat"],[-1,-1,"wheat"]],[{q:-3,r:0,after:4}],"Ironwood"),
   ];
   function progress() {
@@ -603,6 +603,15 @@
       tile.classList.add("resolved-object");
     }
   }
+  function showForgePlacement(q, r) {
+    const tile = boardForEffects()?.querySelector(
+      `.hex-tile[data-q="${q}"][data-r="${r}"]`,
+    );
+    if (!tile) return;
+    tile.classList.add("forge-placement");
+    const object = tile.querySelector(".hex-object");
+    if (object) object.innerHTML = asset("forge");
+  }
   function hitTile(q, r, kind, delay = 0) {
     later(() => {
       const box = tileViewport(q, r);
@@ -731,12 +740,19 @@
   function finalFireWaves(afterWorld) {
     const waves = [];
     let cursor = clone(afterWorld);
-    while (cellsWithFire(cursor).length && !cursor.lost) {
+    while (
+      (cellsWithFire(cursor).length ||
+        cursor.scheduledFires.some((fire) => !fire.fired)) &&
+      waves.length < 128
+    ) {
       const next = clone(cursor);
-      hex.resolveFire(active, next, false);
+      hex.resolveFire(active, next, true);
+      next.worldSteps++;
       waves.push({ before: cursor, after: next });
       cursor = next;
     }
+    if (waves.length === 128)
+      throw new Error(`Final Fire Resolution exceeded 128 steps for ${active.id}.`);
     return waves;
   }
   function startResult(success) {
@@ -761,6 +777,10 @@
   function playPresentation(action, before, afterWorld, waves, finalState) {
     const queue = new PresentationQueue(),
       direct = actionEffectCells(before, action),
+      forge =
+        action.tool === "forge"
+          ? hex.forgePlan(before, action.q, action.r)
+          : null,
       kind =
         action.tool === "woodcutter"
           ? "wood"
@@ -777,6 +797,17 @@
       queue.after(90, () =>
         root.document?.querySelector("#hexWait")?.classList.add("wait-pressed"),
       );
+    if (forge) {
+      queue.at(30, () => {
+        hitTile(forge.center.q, forge.center.r, "iron");
+        showForgePlacement(forge.center.q, forge.center.r);
+      });
+      forge.fuel.forEach((cell, index) => {
+        const at = 50 + index * stagger;
+        queue.at(at, () => hitTile(cell.q, cell.r, "iron"));
+        queue.at(at + TIMING.LOCAL_HIT, () => clearVisualObject(cell.q, cell.r));
+      });
+    }
     if (kind)
       direct.forEach((cell, index) => {
         const start = 50 + index * stagger,
@@ -955,7 +986,7 @@
         waves = afterWorld.moves === 0 ? finalFireWaves(afterWorld) : [],
         finalState =
           afterWorld.moves === 0
-            ? hex.settleFire(active, afterWorld)
+            ? hex.finalResolution(active, afterWorld).state
             : afterWorld;
       state = finalState;
       committed = true;
@@ -988,7 +1019,7 @@
     document.querySelector("#hexCampaignPlay").hidden = true;
     const chapterIntro = {
       Lowlands: "Learn how a cut changes what the Fire can reach.",
-      Ironwood: "Forge turns neighbouring Trees and connected Ore into Iron.",
+      Ironwood: "Forge burns every adjacent Tree. Each can process 1 Ore.",
     };
     home.innerHTML = `<div class="hex-level-list">${levels
       .map((level, index) => {
@@ -1050,7 +1081,7 @@
         : "",
       playControls = ended
         ? resultPanel()
-        : `<div class="hex-campaign-tools">${active.tools.includes("woodcutter") ? `<div class="tool-card direct-tool">${asset("woodcutter")}<span><b>Woodcutter</b><small>Swipe Trees</small></span></div>` : ""}${active.tools.includes("sickle") ? `<div class="tool-card direct-tool">${asset("sickle")}<span><b>Sickle</b><small>Tap Wheat</small></span></div>` : ""}${active.tools.includes("forge") ? `<button class="tool-card ${tool === "forge" ? "selected" : ""}" data-tool="forge">${asset("forge")}<span><b>Forge</b><small>Place on a hex</small></span></button>` : ""}${active.tools.includes("wait") ? `<button id="hexWait" class="tool-card">${asset("wait")}<span><b>WAIT</b><small>0 moves · advance world</small></span></button>` : ""}</div><div class="hex-campaign-actions"><button id="hexUndo" ${history.length && !effectsLocked ? "" : "disabled"}>↶ Undo</button><button id="hexRestart">Restart</button></div><p class="hex-play-note">${gesture ? (gesture.direction ? `Release to cut ${preview.length} Tree${preview.length === 1 ? "" : "s"}.` : "Return to the centre to cancel.") : forgePreview ? `Forge preview · centre replaces ${forgePreview.center.object || "Ground"} · ${forgePreview.fuel.length} fuel Tree${forgePreview.fuel.length === 1 ? "" : "s"} · ${forgePreview.ore.length} Iron.` : notice || " "}</p>`;
+        : `<div class="hex-campaign-tools">${active.tools.includes("woodcutter") ? `<div class="tool-card direct-tool">${asset("woodcutter")}<span><b>Woodcutter</b><small>Swipe Trees</small></span></div>` : ""}${active.tools.includes("sickle") ? `<div class="tool-card direct-tool">${asset("sickle")}<span><b>Sickle</b><small>Tap Wheat</small></span></div>` : ""}${active.tools.includes("forge") ? `<button class="tool-card ${tool === "forge" ? "selected" : ""}" data-tool="forge">${asset("forge")}<span><b>Forge</b><small>Burns adjacent Trees</small></span></button>` : ""}${active.tools.includes("wait") ? `<button id="hexWait" class="tool-card">${asset("wait")}<span><b>WAIT</b><small>0 moves · advance world</small></span></button>` : ""}</div><div class="hex-campaign-actions"><button id="hexUndo" ${history.length && !effectsLocked ? "" : "disabled"}>↶ Undo</button><button id="hexRestart">Restart</button></div><p class="hex-play-note">${gesture ? (gesture.direction ? `Release to cut ${preview.length} Tree${preview.length === 1 ? "" : "s"}.` : "Return to the centre to cancel.") : forgePreview ? `Forge preview · centre destroys ${forgePreview.center.object || "Ground"} · ${forgePreview.fuel.length} Trees burned → ${forgePreview.count} Iron${forgePreview.excessFuel ? ` · ${forgePreview.excessFuel} excess fuel` : ""}.` : notice || " "}</p>`;
     const hudState = { ...display, moves: state.moves };
     host.innerHTML = `<header class="hex-play-head"><button id="hexPlayBack" type="button">‹ Puzzles</button><span><small>LEVEL ${active.number}</small>${active.title}</span></header>${active.lesson ? `<p class="hex-lesson">${active.lesson}</p>` : ""}<div class="hex-resources">${statusText(active, hudState, shownRes || state.res)}</div><div id="hexCampaignBoard" class="hex-board hex-campaign-board" aria-label="${active.title} hex board" style="width:${l.width}px;height:${l.height}px;--hex-gap:${l.visualGap}px">${sweep}<div class="hex-effect-layer" aria-hidden="true"></div>${l.cells
       .map((cell) => {
