@@ -3,6 +3,7 @@ require('../hex-lab.js');
 require('../hex-production.js');
 const hex=globalThis.SootSeedHexLab;
 const campaign=globalThis.SootSeedHexCampaign;
+const timing=campaign.presentationTiming;
 
 function stable(def,state){return state.moves===0?hex.settleFire(def,state):state}
 function stateKey(state){return JSON.stringify({moves:state.moves,steps:state.worldSteps,res:state.res,cells:Object.values(state.cells).map(cell=>[cell.q,cell.r,cell.object,cell.fire]),fires:state.scheduledFires})}
@@ -11,6 +12,10 @@ function woodCounts(def){const state=hex.createInitialState(def),actions=hex.get
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 
 assert.equal(campaign.levels.length,5,'Lowlands has exactly five authored levels');
+assert.deepEqual(timing,{POINTER_RESPONSE:70,DIRECTION_SNAP:60,HARVEST_STAGGER:150,LOCAL_HIT:120,RESOURCE_POP:120,RESOURCE_HOLD:280,RESOURCE_FLY:280,RESOURCE_FLY_STAGGER:40,HUD_BOUNCE:170,ACTION_WORLD_PAUSE:180,WORLD_TICK:120,FIRE_ANTICIPATION:120,FIRE_TRAVEL:180,FIRE_IGNITION:140,FIRE_SETTLE:160,SCHEDULED_IGNITION_PAUSE:120,FINAL_WAVE_PAUSE:150,STABLE_TO_RESULT:350,RESULT_ENTER:260},'the complete presentation timeline is centrally configured');
+assert.equal(50+2*timing.HARVEST_STAGGER+timing.LOCAL_HIT,470,'three-tree Woodcutter action resolves as a readable 0/150/300ms chop rhythm');
+assert.equal(timing.RESOURCE_POP+timing.RESOURCE_HOLD+timing.RESOURCE_FLY,680,'each resource uses one pop/hold/fly pipeline before the HUD increment');
+assert.equal(timing.FIRE_ANTICIPATION+timing.FIRE_TRAVEL+timing.FIRE_IGNITION+timing.FIRE_SETTLE,600,'a normal Fire response has one coordinated 600ms visual grammar');
 assert.deepEqual(campaign.levels.map(level=>level.title),['First Cut','Fireline','Field & Forest','Waiting Spark','Crossroads']);
 assert.equal(campaign.levels.some(level=>level.tools.includes('forge')||level.wind),false,'Lowlands 1–5 does not introduce Forge or Wind');
 for(const level of campaign.levels)assert.equal(hex.validateDefinition(level).ok,true,`${level.title} validates against production hex rules`);
