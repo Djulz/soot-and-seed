@@ -374,7 +374,7 @@
       later(fn, time);
       return time;
     }
-    after(delay, fn) {
+    after(delay, fn = () => {}) {
       this.cursor += delay;
       return this.at(this.cursor, fn);
     }
@@ -810,7 +810,7 @@
       queue.after(TIMING.FIRE_ANTICIPATION, () =>
         showFireTravel(sources, normalIgnitions),
       );
-      queue.after(TIMING.FIRE_TRAVEL);
+      queue.after(TIMING.FIRE_TRAVEL, () => {});
       queue.after(TIMING.FIRE_TRAVEL_IMPACT_PAUSE, () => {
         visualState = normalView;
         renderPlay();
@@ -872,7 +872,7 @@
           targets,
         ),
       );
-      queue.after(TIMING.FIRE_TRAVEL);
+      queue.after(TIMING.FIRE_TRAVEL, () => {});
       queue.after(TIMING.FIRE_TRAVEL_IMPACT_PAUSE, () => {
         visualState = wave.after;
         renderPlay();
