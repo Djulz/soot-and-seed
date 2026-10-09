@@ -9,7 +9,8 @@ assert.equal(g.width,80,'regular flat-top hex width is 2S');
 assert.equal(g.height,Math.sqrt(3)*40,'regular flat-top hex height is √3S');
 assert.equal(g.width/g.height,2/Math.sqrt(3),'regular flat-top hex ratio is preserved');
 assert.equal(g.distance,Math.sqrt(3)*40+3,'center distance is D = √3S + G');
-for(const [,q,r] of hex.directions){const point=hex.point(q,r,40,3);assert.ok(Math.abs(Math.hypot(point.x,point.y)-g.distance)<1e-9,'all six neighbour centres are exactly D away');assert.ok(Math.abs(Math.hypot(point.x,point.y)-Math.sqrt(3)*40-3)<1e-9,'all six rendered edge gaps are G')}
+assert.deepEqual(hex.flatTopVertices(40),[[40,0],[20,-Math.sqrt(3)*20],[-20,-Math.sqrt(3)*20],[-40,0],[-20,Math.sqrt(3)*20],[20,Math.sqrt(3)*20]],'visible flat-top polygon reaches every intended bounding-box edge');
+for(const direction of hex.directions){const [,q,r]=direction,point=hex.point(q,r,40,3);assert.ok(Math.abs(Math.hypot(point.x,point.y)-g.distance)<1e-9,'all six neighbour centres are exactly D away');assert.ok(Math.abs(hex.visibleEdgeGap(direction,40,3)-3)<1e-9,'actual rendered polygon edge gap is G in every direction')}
 assert.equal(hex.directionForDrag(0,0,40),null,'central drag dead zone cancels direction selection');
 assert.equal(hex.directionForDrag(70,0,40),'E','dragging beyond the dead zone snaps to a hex axis');
 const a=hex.definitions.a,initial=hex.createInitialState(a),before=JSON.stringify(initial);

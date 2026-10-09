@@ -29,7 +29,7 @@ for(const level of campaign.levels){
   assert.ok(Math.abs(full.g.height-Math.sqrt(3)*full.radius)<1e-9,`${level.title} uses flat-top height = √3S`);
   assert.ok(Math.abs(full.g.distance-(Math.sqrt(3)*full.radius+full.visualGap))<1e-9,`${level.title} uses D = √3S + G`);
   const center=hex.point(0,0,full.radius,full.visualGap);
-  for(const [name,q,r] of hex.directions){const neighbour=hex.point(q,r,full.radius,full.visualGap);assert.ok(Math.abs(distance(center,neighbour)-full.g.distance)<1e-9,`${level.title} ${name} neighbour center is exactly D away`);assert.ok(Math.abs(distance(center,neighbour)-Math.sqrt(3)*full.radius-full.visualGap)<1e-9,`${level.title} ${name} visible gap is G`)}
+  for(const direction of hex.directions){const [name,q,r]=direction,neighbour=hex.point(q,r,full.radius,full.visualGap);assert.ok(Math.abs(distance(center,neighbour)-full.g.distance)<1e-9,`${level.title} ${name} neighbour center is exactly D away`);assert.ok(Math.abs(hex.visibleEdgeGap(direction,full.radius,full.visualGap)-full.visualGap)<1e-9,`${level.title} ${name} actual polygon edge gap is G`)}
   const miniOrigin=hex.point(0,0,mini.radius,mini.visualGap),fullOrigin=hex.point(0,0,full.radius,full.visualGap),miniEast=hex.point(1,0,mini.radius,mini.visualGap),fullEast=hex.point(1,0,full.radius,full.visualGap);
   assert.equal(Math.sign(miniEast.x-miniOrigin.x),Math.sign(fullEast.x-fullOrigin.x),`${level.title} thumbnail and gameplay share flat-top projection`);
   for(const cell of full.cells){const p=full.positionFor(cell);assert.ok(p.left>=12&&p.top>=12&&p.left+full.g.width<=full.width-12&&p.top+full.g.height<=full.height-12,`${level.title} includes complete hex polygons`)}
