@@ -63,4 +63,30 @@ assert.equal(earlyWithFireComplete.state.moves, 1, "automatic completion does no
 assert.ok(earlyWithFireComplete.steps > 0, "goals met with unresolved Fire enters automatic resolution");
 assert.equal(earlyWithFireComplete.state.won, true, "automatic resolution wins only after the scheduled Fire has resolved");
 assert.equal(earlyWithFireComplete.state.res.charcoal, 1, "the scheduled Fire resolves before the early win is awarded");
+
+const farmsteadDef = {
+  id: "farmstead-rules",
+  moves: 2,
+  req: {},
+  tools: ["woodcutter", "sickle", "forge", "wait"],
+  farmstead: { q: 1, r: 0 },
+  cells: {
+    "0,0": cell(0, 0, "tree", "active"),
+    "1,0": cell(1, 0, "farmstead"),
+    "2,0": cell(2, 0, "tree"),
+    "0,1": cell(0, 1, "wheat"),
+    "-1,0": cell(-1, 0, "ore"),
+    "-1,1": cell(-1, 1, "tree"),
+  },
+};
+assert.equal(hex.validateDefinition(farmsteadDef).ok, true, "declared Farmstead points to a Farmstead object");
+const farmsteadHit = hex.applyAction(farmsteadDef, hex.createInitialState(farmsteadDef), { tool: "wait" }).state;
+assert.equal(farmsteadHit.lost, true, "Active Fire ignites an adjacent Farmstead and loses the level");
+const dyingFarmstead = hex.createInitialState({ ...farmsteadDef, cells: { ...farmsteadDef.cells, "0,0": cell(0, 0, "tree", "dying") } });
+const dyingAfter = hex.applyAction(farmsteadDef, dyingFarmstead, { tool: "wait" }).state;
+assert.equal(dyingAfter.lost, false, "Dying Fire does not spread to the Farmstead");
+assert.deepEqual(hex.cutLine(hex.createInitialState(farmsteadDef), 2, 0, "W").map((c) => `${c.q},${c.r}`), ["2,0"], "Woodcutter stops before a Farmstead");
+assert.deepEqual(hex.connected(hex.createInitialState(farmsteadDef), 1, 0, "wheat"), [], "Sickle cannot harvest a Farmstead");
+assert.equal(hex.forgePlan(hex.createInitialState(farmsteadDef), 1, 0), null, "Forge cannot overwrite a Farmstead");
+assert.equal(hex.validateDefinition({ ...farmsteadDef, farmstead: { q: 2, r: 2 } }).ok, false, "invalid Farmstead declarations fail validation");
 console.log("Hex core rule smoke tests passed.");

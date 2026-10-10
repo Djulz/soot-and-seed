@@ -25,6 +25,12 @@ assert.equal(timing.FIRE_ANTICIPATION+timing.FIRE_TRAVEL+timing.FIRE_TRAVEL_IMPA
 assert.deepEqual(lowlands.map(level=>level.title),['First Cut','Fireline','Field & Forest','Waiting Spark','Crossroads']);
 assert.equal(lowlands.some(level=>level.tools.includes('forge')||level.wind),false,'Lowlands 1–5 does not introduce Forge or Wind');
 for(const level of campaign.levels)assert.equal(hex.validateDefinition(level).ok,true,`${level.title} validates against production hex rules`);
+for(const level of campaign.levels.filter(level=>level.chapter==='Ash Homestead')){
+  const farm=level.cells[hex.key(level.farmstead.q,level.farmstead.r)];
+  assert.equal(farm?.object,'farmstead',`${level.title} declares a visible Farmstead object`);
+}
+assert.match(productionSource,/if \(kind === "farmstead"\)/,'production renderer provides a Farmstead SVG asset');
+assert.match(productionSource,/hex-mini i\.farmstead/,'Puzzle Select has a Farmstead thumbnail mark');
 assert.equal(Object.keys(lowlands[0].cells).length,7,'First Cut is a radius-one board');
 for(const level of lowlands.slice(1))assert.equal(Object.keys(level.cells).length,19,`${level.title} is a radius-two board`);
 assert.deepEqual(lowlands.map(level=>solve(level).length),[1,1,1,2,3],'every Lowlands level has one or more production-engine winning paths');
