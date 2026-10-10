@@ -11,15 +11,28 @@ const wood = legal.filter((action) => action.tool === "woodcutter");
 const distinctWood = new Set(wood.map((action) => hex.cutLine(initial, action.q, action.r, action.direction).map((cell) => `${cell.q},${cell.r}`).sort().join("|")));
 const forge = legal.filter((action) => action.tool === "forge");
 
-assert.equal(Object.keys(level.cells).length, 37, "The Knot uses a radius-three board");
-assert.equal(Object.values(level.cells).filter((cell) => cell.object === "tree").length, 18, "The Knot has a tight Tree budget");
-assert.equal(Object.values(level.cells).filter((cell) => cell.object === "wheat").length, 5, "Wheat is a real required region");
+assert.equal(Object.keys(level.cells).length, 37, "The Wildfire uses a radius-three board");
+assert.equal(Object.values(level.cells).filter((cell) => cell.object === "tree").length, 18, "The Wildfire preserves two Ground fire corridors on a radius-three board");
+assert.equal(Object.values(level.cells).filter((cell) => cell.object === "wheat").length, 13, "Wheat is deliberately surplus");
 assert.equal(Object.values(level.cells).filter((cell) => cell.object === "ore").length, 4, "Ore is a compact contested region");
-assert.deepEqual(level.farmstead, { q: 0, r: 3 }, "Farmstead occupies an explicit, threatened hex");
+assert.equal(level.req.charcoal, undefined, "Wildfire triage has no Charcoal goal");
+assert.deepEqual(level.farmstead, { q: 2, r: 0 }, "Farmstead occupies an explicit, threatened hex");
 assert.deepEqual(level.scheduledFires.map((fire) => fire.after), [2, 4], "Two scheduled Fires attack on different clocks");
 assert.ok(wood.length >= 16 && distinctWood.size >= 10, "directional opening space is substantial");
 assert.ok(forge.length >= 4, "multiple Forge placements are legal");
 assert.ok(forge.some((action) => { const plan = hex.forgePlan(initial, action.q, action.r); return plan.count === 4 && plan.excessFuel === 1; }), "a high-output Forge visibly wastes fuel");
+const fields = [
+  hex.connected(initial, -3, 0, "wheat"),
+  hex.connected(initial, 0, -3, "wheat"),
+  hex.connected(initial, 0, 2, "wheat"),
+].map((field) => field.length).sort((a, b) => b - a);
+assert.deepEqual(fields, [5, 4, 4], "three separated Wheat fields create non-obvious harvest choices");
+const meaningfulWood = wood.filter((action) => hex.cutLine(initial, action.q, action.r, action.direction).length >= 2);
+const meaningfulForge = forge.filter((action) => hex.forgePlan(initial, action.q, action.r).count >= 3);
+const wheatOpenings = new Set(legal
+  .filter((action) => action.tool === "sickle")
+  .map((action) => hex.connected(initial, action.q, action.r, "wheat").map((cell) => `${cell.q},${cell.r}`).sort().join("|")));
+assert.ok(wheatOpenings.size + meaningfulWood.length + meaningfulForge.length + 1 >= 5, "the opening offers more than five credible action candidates");
 
 function play(actions) {
   let state = initial;
@@ -27,15 +40,15 @@ function play(actions) {
   return hex.finalResolution(level, state).state;
 }
 const winner = play([
-  { tool: "sickle", q: -1, r: -2 },
-  { tool: "woodcutter", q: -3, r: 2, direction: "NE" },
-  { tool: "forge", q: -1, r: 1 },
-  { tool: "woodcutter", q: -1, r: 3, direction: "W" },
-  { tool: "woodcutter", q: 1, r: 2, direction: "W" },
+  { tool: "sickle", q: -3, r: 0 },
+  { tool: "woodcutter", q: -1, r: 1, direction: "SE" },
+  { tool: "forge", q: 0, r: -1 },
+  { tool: "woodcutter", q: 3, r: -2, direction: "SE" },
+  { tool: "woodcutter", q: 0, r: 1, direction: "E" },
 ]);
 assert.equal(winner.won, true, "the five-paid-move reference line wins");
 assert.equal(winner.moves, 0, "every paid move is required");
-assert.deepEqual(winner.res, { wood: 8, wheat: 5, charcoal: 6, iron: 3 }, "the reference line has no Wood, Wheat, Charcoal, or Iron slack");
+assert.deepEqual(winner.res, { wood: 7, wheat: 5, charcoal: 6, iron: 3 }, "the reference line uses exact Wood, Wheat, and Iron goals while Charcoal remains incidental");
 
 let unattended = initial;
 for (let step = 0; step < 6 && !unattended.lost; step++) unattended = hex.applyAction(level, unattended, { tool: "wait" }).state;

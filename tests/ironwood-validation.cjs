@@ -29,7 +29,7 @@ function search(level, maxWorldSteps = 12) {
   const witnesses = {
     10: [{ tool: "sickle", q: -2, r: -1 }, { tool: "forge", q: 0, r: 0 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }],
     14: [{ tool: "forge", q: -1, r: 1 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }, { tool: "woodcutter", q: 0, r: 3, direction: "E" }],
-    15: [{ tool: "sickle", q: -1, r: -2 }, { tool: "woodcutter", q: -3, r: 2, direction: "NE" }, { tool: "forge", q: -1, r: 1 }, { tool: "woodcutter", q: -1, r: 3, direction: "W" }, { tool: "woodcutter", q: 1, r: 2, direction: "W" }],
+    15: [{ tool: "sickle", q: -3, r: 0 }, { tool: "woodcutter", q: -1, r: 1, direction: "SE" }, { tool: "forge", q: 0, r: -1 }, { tool: "woodcutter", q: 3, r: -2, direction: "SE" }, { tool: "woodcutter", q: 0, r: 1, direction: "E" }],
   };
   const witness = witnesses[level.number] || null;
   if (witness) {
