@@ -48,4 +48,19 @@ const earlyAction = hex.applyAction(early, hex.createInitialState(early), { tool
 const earlyComplete = hex.completionResolution(early, earlyAction);
 assert.equal(earlyComplete.state.moves, 1, "early completion preserves irrelevant paid moves");
 assert.equal(earlyComplete.state.won, true, "requirements complete immediately when the world is stable");
+
+const earlyWithFire = {
+  id: "early-complete-with-scheduled-fire",
+  moves: 2,
+  req: { wood: 1 },
+  tools: ["woodcutter", "wait"],
+  cells: { "0,0": cell(0, 0, "tree"), "2,0": cell(2, 0, "tree") },
+  scheduledFires: [{ q: 2, r: 0, after: 1 }],
+};
+const earlyWithFireAction = hex.applyAction(earlyWithFire, hex.createInitialState(earlyWithFire), { tool: "woodcutter", q: 0, r: 0, direction: "E" }).state;
+const earlyWithFireComplete = hex.completionResolution(earlyWithFire, earlyWithFireAction);
+assert.equal(earlyWithFireComplete.state.moves, 1, "automatic completion does not spend a remaining paid move");
+assert.ok(earlyWithFireComplete.steps > 0, "goals met with unresolved Fire enters automatic resolution");
+assert.equal(earlyWithFireComplete.state.won, true, "automatic resolution wins only after the scheduled Fire has resolved");
+assert.equal(earlyWithFireComplete.state.res.charcoal, 1, "the scheduled Fire resolves before the early win is awarded");
 console.log("Hex core rule smoke tests passed.");

@@ -88,7 +88,7 @@ function summary(level) {
   const minimumPaid = Math.min(...wins.map(paid));
   const minimumWaits = Math.min(...wins.filter((win) => paid(win) === minimumPaid).map(waits));
   const selected = wins.find((win) => paid(win) === minimumPaid && waits(win) === minimumWaits);
-  assert.ok(minimumPaid <= level.moves, `${level.id} exceeds paid move budget`);
+  assert.equal(minimumPaid, level.moves, `${level.id} has a redundant or insufficient paid move budget`);
   const families = new Set(wins.map((win) => win.path.map((action) => action.tool).join(">")));
   return {
     level: level.number,
