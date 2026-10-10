@@ -14,7 +14,7 @@ function solve(def){const queue=[{state:hex.createInitialState(def),actions:[]}]
 function woodCounts(def){const state=hex.createInitialState(def),actions=hex.getLegalActions(def,state).filter(action=>action.tool==='woodcutter'),results=new Set(actions.map(action=>hex.cutLine(state,action.q,action.r,action.direction).map(cell=>hex.key(cell.q,cell.r)).sort().join('|')));return{raw:actions.length,distinct:results.size}}
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 
-assert.equal(campaign.levels.length,10,'campaign has ten authored levels');
+assert.equal(campaign.levels.length,15,'campaign has fifteen authored levels');
 assert.equal(lowlands.length,5,'Lowlands has exactly five authored levels');
 assert.match(productionSource,/let cursor = clone\(afterWorld\)/,'final fire waves owns its advancing cursor as mutable state');
 assert.doesNotMatch(productionSource,/renderPlay\s*=\s*function/,'production renderer is not reassigned at runtime');

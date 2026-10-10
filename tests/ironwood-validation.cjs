@@ -20,13 +20,18 @@ const outcomeKey = (state) => JSON.stringify({
   cells: Object.values(state.cells).map((cell) => [cell.q, cell.r, cell.object, cell.fire]),
 });
 function resolveFinal(level, state) {
-  return state.moves === 0 ? hex.finalResolution(level, state) : { state, steps: 0 };
+  return state.moves === 0 || hex.goalsMet(level, state)
+    ? hex.finalResolution(level, state)
+    : { state, steps: 0 };
 }
 function search(level, maxWorldSteps = 12) {
   const initial = hex.createInitialState(level);
-  const witness = level.number === 10
-    ? [{ tool: "sickle", q: -2, r: -1 }, { tool: "forge", q: 0, r: 0 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }]
-    : null;
+  const witnesses = {
+    10: [{ tool: "sickle", q: -2, r: -1 }, { tool: "forge", q: 0, r: 0 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }],
+    14: [{ tool: "forge", q: -1, r: 1 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }, { tool: "woodcutter", q: 0, r: 3, direction: "E" }],
+    15: [{ tool: "sickle", q: -2, r: -1 }, { tool: "forge", q: -1, r: 1 }, { tool: "woodcutter", q: -3, r: 3, direction: "E" }, { tool: "woodcutter", q: -3, r: 2, direction: "E" }, { tool: "woodcutter", q: 0, r: 3, direction: "E" }],
+  };
+  const witness = witnesses[level.number] || null;
   if (witness) {
     let state = initial, autoSteps = 0;
     for (const action of witness) {

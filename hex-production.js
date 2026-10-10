@@ -144,9 +144,14 @@
     ),
     authored("ironwood-6",6,"First Forge","Forge burns every adjacent Tree. Each can process 1 Ore.",2,{iron:2,wood:3},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
     authored("ironwood-7",7,"Just Enough","Which Trees should become fuel?",3,{iron:2,wood:4},["forge","woodcutter"],2,[[-1,0,"tree"],[0,-1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"tree"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"],[-2,1,"tree"],[-2,0,"tree"]],[],"Ironwood"),
-    authored("ironwood-8",8,"Fuel or Ash","The same grove can become Iron, Wood, or Charcoal.",3,{iron:2,wood:3,charcoal:3},["forge","woodcutter","wait"],2,[[-2,0,"tree","active"],[-1,0,"tree"],[0,0,"tree"],[1,0,"tree"],[-1,-1,"tree"],[0,-1,"tree"],[1,-1,"ore"],[2,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
-    authored("ironwood-9",9,"Before the Spark","A Scheduled Fire continues after your final paid move.",3,{iron:3,wood:3,charcoal:3},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ironwood"),
+    authored("ironwood-8",8,"Fuel or Ash","The same grove can become Iron, Wood, or Charcoal.",2,{iron:2,wood:3,charcoal:3},["forge","woodcutter","wait"],2,[[-2,0,"tree","active"],[-1,0,"tree"],[0,0,"tree"],[1,0,"tree"],[-1,-1,"tree"],[0,-1,"tree"],[1,-1,"ore"],[2,-1,"ore"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"]],[],"Ironwood"),
+    authored("ironwood-9",9,"Before the Spark","A Scheduled Fire continues after your final paid move.",2,{iron:3,wood:3,charcoal:3},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ironwood"),
     authored("ironwood-10",10,"Iron Crossing","Use the grove for Iron, Wood, Wheat, and Ash.",4,{iron:3,wood:5,charcoal:4,wheat:4},["forge","woodcutter","sickle","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[-3,2,"tree"],[-2,2,"tree"],[-1,2,"tree"],[2,0,"tree","active"],[3,0,"tree"],[2,-1,"tree"],[1,1,"tree"],[-3,0,"tree"],[-2,-1,"wheat"],[-1,-2,"wheat"],[0,-3,"wheat"],[-1,-1,"wheat"]],[{q:-3,r:0,after:4}],"Ironwood"),
+    authored("ash-11",11,"Firebreak","Keep the Farmstead out of the Fire.",2,{wood:6,charcoal:1},["woodcutter","wait"],3,[[-3,0,"tree","active"],[-2,0,"tree"],[-1,0,"tree"],[0,0,"tree"],[1,0,"tree"],[2,0,"tree"],[3,0,"farmstead"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"],[-2,1,"tree"],[-1,1,"tree"]],[],"Ash Homestead"),
+    authored("ash-12",12,"Borrowed Fuel","",2,{iron:3,wood:3,charcoal:1},["forge","woodcutter","wait"],3,[[-3,0,"tree","active"],[-2,0,"tree"],[-1,0,"tree"],[0,0,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[2,0,"farmstead"],[-2,2,"tree"],[-1,2,"tree"],[0,2,"tree"],[-1,-1,"tree"],[-1,1,"tree"]],[],"Ash Homestead"),
+    authored("ash-13",13,"Closing Window","",3,{iron:3,wood:3,charcoal:2},["forge","woodcutter","wait"],3,[[-1,0,"tree"],[0,-1,"tree"],[-1,1,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[-3,0,"tree"],[-2,0,"tree"],[-1,0,"tree"],[0,0,"tree"],[1,1,"farmstead"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:2}],"Ash Homestead"),
+    authored("ash-14",14,"Two Fronts","",4,{iron:3,wood:5,charcoal:4},["forge","woodcutter","wait"],3,[[-3,0,"tree","active"],[-2,0,"tree"],[-1,0,"tree"],[0,0,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[2,0,"farmstead"],[-3,2,"tree"],[-2,2,"tree"],[-1,2,"tree"],[0,3,"tree"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[-1,-1,"tree"],[-1,1,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"]],[{q:2,r:-2,after:3}],"Ash Homestead"),
+    authored("ash-15",15,"The Knot","",5,{iron:3,wood:5,charcoal:4,wheat:4},["forge","woodcutter","sickle","wait"],3,[[-3,0,"tree","active"],[-2,0,"tree"],[-1,0,"tree"],[0,0,"tree"],[1,0,"ore"],[1,-1,"ore"],[0,1,"ore"],[2,0,"farmstead"],[-3,2,"tree"],[-2,2,"tree"],[-1,2,"tree"],[0,3,"tree"],[-3,3,"tree"],[-2,3,"tree"],[-1,3,"tree"],[-1,-1,"tree"],[-1,1,"tree"],[2,-2,"tree"],[2,-3,"tree"],[1,-2,"tree"],[-2,-1,"wheat"],[-1,-2,"wheat"],[0,-3,"wheat"],[-1,-1,"wheat"]],[{q:2,r:-2,after:3}],"Ash Homestead"),
   ];
   function progress() {
     try {
@@ -983,11 +988,12 @@
       history.push(before);
       const result = hex.applyAction(active, state, action),
         afterWorld = clone(result.state),
-        waves = afterWorld.moves === 0 ? finalFireWaves(afterWorld) : [],
-        finalState =
-          afterWorld.moves === 0
-            ? hex.finalResolution(active, afterWorld).state
-            : afterWorld;
+        shouldResolve =
+          afterWorld.moves === 0 || hex.goalsMet(active, afterWorld),
+        waves = shouldResolve ? finalFireWaves(afterWorld) : [],
+        finalState = shouldResolve
+          ? hex.finalResolution(active, afterWorld).state
+          : afterWorld;
       state = finalState;
       committed = true;
       visualState = before;
@@ -1020,13 +1026,15 @@
     const chapterIntro = {
       Lowlands: "Learn how a cut changes what the Fire can reach.",
       Ironwood: "Forge burns every adjacent Tree. Each can process 1 Ore.",
+      "Ash Homestead": "Protect the Farmstead while every Tree takes on a role.",
     };
     home.innerHTML = `<div class="hex-level-list">${levels
       .map((level, index) => {
         const ready = unlocked(level, p),
           done = completed(level, p);
         const startsChapter = index === 0 || levels[index - 1].chapter !== level.chapter;
-        return `${startsChapter ? `<section class="hex-chapter"><p class="eyebrow">Chapter ${level.chapter === "Lowlands" ? 1 : 2}</p><h1>${level.chapter}</h1><p class="hex-campaign-lead">${chapterIntro[level.chapter]}</p></section>` : ""}<button class="hex-level-card ${ready ? "ready" : "locked"}" data-level="${level.id}" ${ready ? "" : "disabled"}>${mini(level)}<span class="hex-card-copy"><b>${level.number} · ${level.title}</b><small>${done ? "Secured" : ready ? "Ready" : "Locked"}</small></span></button>`;
+        const chapterNumber = { Lowlands: 1, Ironwood: 2, "Ash Homestead": 3 }[level.chapter];
+        return `${startsChapter ? `<section class="hex-chapter"><p class="eyebrow">Chapter ${chapterNumber}</p><h1>${level.chapter}</h1><p class="hex-campaign-lead">${chapterIntro[level.chapter]}</p></section>` : ""}<button class="hex-level-card ${ready ? "ready" : "locked"}" data-level="${level.id}" ${ready ? "" : "disabled"}>${mini(level)}<span class="hex-card-copy"><b>${level.number} · ${level.title}</b><small>${done ? "Secured" : ready ? "Ready" : "Locked"}</small></span></button>`;
       })
       .join(
         "",

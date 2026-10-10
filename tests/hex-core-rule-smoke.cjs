@@ -42,4 +42,10 @@ assert.equal(resolution.state.res.charcoal, 2, "scheduled Fire spreads and resol
 assert.equal(resolution.state.scheduledFires[0].fired, true, "scheduled source activates during Final Resolution");
 assert.equal(Object.values(resolution.state.cells).some((c) => c.fire === "active" || c.fire === "dying"), false, "Final Resolution stops only when Fire is stable");
 assert.equal(resolution.state.won, true, "outcome evaluates only after automatic resolution completes");
+
+const early = { id: "early-complete", moves: 2, req: { wood: 1 }, tools: ["woodcutter"], cells: { "0,0": cell(0, 0, "tree") } };
+const earlyAction = hex.applyAction(early, hex.createInitialState(early), { tool: "woodcutter", q: 0, r: 0, direction: "E" }).state;
+const earlyComplete = hex.completionResolution(early, earlyAction);
+assert.equal(earlyComplete.state.moves, 1, "early completion preserves irrelevant paid moves");
+assert.equal(earlyComplete.state.won, true, "requirements complete immediately when the world is stable");
 console.log("Hex core rule smoke tests passed.");
